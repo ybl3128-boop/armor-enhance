@@ -1,6 +1,6 @@
 const STORAGE_KEY = "armor-enhance-state-v1";
 const LOG_STORAGE_KEY = "armor-enhance-logs-v1";
-const INITIAL_GOLD = 3000;
+const INITIAL_GOLD = 5000;
 const INITIAL_PROTECTION_TICKETS = 1;
 const MAX_LEVEL = 15;
 

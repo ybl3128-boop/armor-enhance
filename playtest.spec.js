@@ -15,13 +15,13 @@ test.beforeEach(async ({ page }) => {
 test("초기 화면과 기본 강화 흐름", async ({ page }) => {
   await expect(page.locator("#armor-name")).toHaveText("낡은 갑옷");
   await expect(page.locator("#chance-value")).toHaveText("100%");
-  await expect(page.locator("#gold-value")).toHaveText("3,000");
+  await expect(page.locator("#gold-value")).toHaveText("5,000");
   await expect(page.locator("#sell-button")).toBeDisabled();
 
   await page.getByRole("button", { name: "강화하기" }).click();
 
   await expect(page.locator("#stage-caption")).toHaveText("+1");
-  await expect(page.locator("#gold-value")).toHaveText("2,975");
+  await expect(page.locator("#gold-value")).toHaveText("4,975");
   await expect(page.locator("#result-title")).toHaveText("강화 성공!");
 });
 
@@ -29,7 +29,7 @@ test("낮은 단계 판매로 골드가 복사되지 않음", async ({ page }) =
   await page.getByRole("button", { name: "강화하기" }).click();
   await page.getByRole("button", { name: "판매하기" }).click();
 
-  await expect(page.locator("#gold-value")).toHaveText("2,990");
+  await expect(page.locator("#gold-value")).toHaveText("4,990");
   await expect(page.locator("#armor-name")).toHaveText("낡은 갑옷");
   await expect(page.locator("#sell-button")).toBeDisabled();
   await expect(page.locator("#result-title")).toHaveText("갑옷 판매 완료");
@@ -103,7 +103,7 @@ test("데이터 초기화 후 처음 상태로 돌아감", async ({ page }) => {
   await page.waitForLoadState("domcontentloaded");
 
   await expect(page.locator("#stage-caption")).toHaveText("+0");
-  await expect(page.locator("#gold-value")).toHaveText("3,000");
+  await expect(page.locator("#gold-value")).toHaveText("5,000");
   await expect(page.locator("#scrap-value")).toHaveText("0");
   await expect(page.locator("#highest-level-value")).toHaveText("+0");
 });
