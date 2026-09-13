@@ -1,0 +1,12 @@
+node_modules/
+playwright-report/
+test-results/
+
+.env
+.env.*
+!.env.example
+
+*.log
+armor-enhance-logs-*.json
+.DS_Store
+Thumbs.db

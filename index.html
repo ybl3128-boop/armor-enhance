@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="낡은 갑옷을 +15까지 강화해 전설의 대장장이가 되는 웹게임"
+    />
+    <title>갑옷 강화하기</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">FORGE PROTOTYPE 0.1</p>
+          <h1>갑옷 강화하기</h1>
+          <p class="subtitle">+15 갑옷을 만들고 전설의 대장장이가 되어보세요.</p>
+        </div>
+        <div class="top-actions">
+          <button class="text-button" id="export-logs-button" type="button">
+            로그 저장
+          </button>
+          <button class="text-button danger-text" id="reset-button" type="button">
+            데이터 초기화
+          </button>
+        </div>
+      </header>
+
+      <section class="summary-grid" aria-label="게임 요약">
+        <article class="summary-card">
+          <span class="summary-label">보유 골드</span>
+          <strong id="gold-value">0</strong>
+          <span class="summary-unit">G</span>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">갑옷 조각</span>
+          <strong id="scrap-value">0</strong>
+          <span class="summary-unit">개</span>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">방지권</span>
+          <strong id="ticket-value">0</strong>
+          <span class="summary-unit">장</span>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">최고 기록</span>
+          <strong id="highest-level-value">+0</strong>
+          <span class="summary-unit">강</span>
+        </article>
+        <article class="summary-card">
+          <span class="summary-label">플레이 세션</span>
+          <strong id="session-value">0</strong>
+          <span class="summary-unit">회</span>
+        </article>
+      </section>
+
+      <main class="game-layout">
+        <section class="panel armor-panel" aria-labelledby="armor-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">CURRENT ARMOR</p>
+              <h2 id="armor-heading">현재 갑옷</h2>
+            </div>
+            <span class="status-pill" id="armor-status">강화 가능</span>
+          </div>
+
+          <div class="armor-stage" id="armor-stage">
+            <div class="armor-shape" id="armor-shape" aria-label="현재 갑옷 placeholder"></div>
+            <div class="stage-glow"></div>
+            <span class="stage-caption" id="stage-caption">+0</span>
+          </div>
+
+          <div class="armor-title">
+            <h3 id="armor-name">낡은 갑옷</h3>
+            <p id="armor-description">아직 아무도 탐내지 않는 낡은 갑옷입니다.</p>
+          </div>
+
+          <div class="milestone-track" aria-label="강화 목표">
+            <div class="milestone" data-level="3">
+              <span>+3</span>
+              <small>보강</small>
+            </div>
+            <div class="milestone" data-level="5">
+              <span>+5</span>
+              <small>강철</small>
+            </div>
+            <div class="milestone" data-level="10">
+              <span>+10</span>
+              <small>정예</small>
+            </div>
+            <div class="milestone final-milestone" data-level="15">
+              <span>+15</span>
+              <small>전설</small>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel action-panel" aria-labelledby="action-heading">
+          <div class="panel-heading">
+            <div>
+              <p class="section-kicker">ENCHANTMENT</p>
+              <h2 id="action-heading">강화 작업</h2>
+            </div>
+            <span class="save-state" id="save-state">자동 저장됨</span>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-row">
+              <span>다음 단계</span>
+              <strong id="next-level-value">+1</strong>
+            </div>
+            <div class="stat-row">
+              <span>성공 확률</span>
+              <strong class="chance-value" id="chance-value">100%</strong>
+            </div>
+            <div class="stat-row">
+              <span>강화 비용</span>
+              <strong id="cost-value">25 G</strong>
+            </div>
+            <div class="stat-row">
+              <span>판매 가격</span>
+              <strong id="sell-value">판매 불가</strong>
+            </div>
+          </div>
+
+          <label class="protection-option" id="protection-option">
+            <input id="protection-checkbox" type="checkbox" />
+            <span class="checkbox-mark" aria-hidden="true"></span>
+            <span>
+              <strong>방지권 사용 예정</strong>
+              <small>실패 시 방지권 1장을 사용해 갑옷을 지킵니다.</small>
+            </span>
+          </label>
+
+          <div class="action-buttons">
+            <button class="primary-button" id="enhance-button" type="button">
+              강화하기
+            </button>
+            <button class="secondary-button" id="sell-button" type="button">
+              판매하기
+            </button>
+          </div>
+
+          <div class="result-box" id="result-box" role="status" aria-live="polite">
+            <span class="result-icon">✦</span>
+            <div>
+              <strong id="result-title">대장간에 오신 것을 환영합니다.</strong>
+              <p id="result-message">
+                성공 확률을 확인하고 첫 강화를 시작하세요.
+              </p>
+            </div>
+          </div>
+
+          <div class="recovery-box hidden" id="recovery-box">
+            <div class="recovery-heading">
+              <div>
+                <p class="section-kicker">RECOVERY</p>
+                <h3>갑옷이 파괴되었습니다</h3>
+              </div>
+              <span id="recovery-scrap-message">조각을 확인하세요.</span>
+            </div>
+            <p class="recovery-copy">
+              조각을 사용해 높은 단계에서 복구하거나 새 갑옷으로 다시 시작할 수 있습니다.
+            </p>
+            <div class="recovery-options" id="recovery-options"></div>
+            <button class="secondary-button full-width" id="new-armor-button" type="button">
+              새 +0 갑옷 받기
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <section class="goal-banner" id="legendary-banner">
+        <div class="goal-emblem">15</div>
+        <div>
+          <p class="section-kicker">ULTIMATE GOAL</p>
+          <h2>+15 전설의 갑옷</h2>
+          <p>여러 세션에 걸쳐 최고의 갑옷을 완성하세요.</p>
+        </div>
+        <span class="goal-state" id="legendary-state">도전 중</span>
+      </section>
+
+      <footer class="footer-note">
+        초기 프로토타입: 갑옷은 네모 도형으로 표시됩니다. 모든 게임 상태는 이 브라우저에 자동 저장됩니다.
+      </footer>
+    </div>
+
+    <script src="./app.js"></script>
+  </body>
+</html>

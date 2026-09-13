@@ -1,0 +1,12 @@
+{
+  "name": "armor-enhance",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A Korean browser game prototype about enhancing armor to +15.",
+  "scripts": {
+    "test:e2e": "playwright test --reporter=line"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}
