@@ -14,7 +14,7 @@ test.beforeEach(async ({ page }) => {
 
 test("초기 화면과 기본 강화 흐름", async ({ page }) => {
   await expect(page.locator("#armor-name")).toHaveText("낡은 갑옷");
-  await expect(page.locator("#chance-value")).toHaveText("100%");
+  await expect(page.locator("#success-chance-value")).toHaveText("100%");
   await expect(page.locator("#gold-value")).toHaveText("5,000");
   await expect(page.locator("#sell-button")).toBeDisabled();
 
@@ -35,13 +35,38 @@ test("낮은 단계 판매로 골드가 복사되지 않음", async ({ page }) =
   await expect(page.locator("#result-title")).toHaveText("갑옷 판매 완료");
 });
 
-test("강화 실패 후 조각을 얻고 새 갑옷으로 복구 가능", async ({ page }) => {
+test("일반 강화 실패는 비용만 소모하고 등급을 유지", async ({ page }) => {
   await page.getByRole("button", { name: "강화하기" }).click();
   await page.getByRole("button", { name: "강화하기" }).click();
 
+  await expect(page.locator("#armor-name")).toHaveText("낡은 갑옷 +1");
+  await expect(page.locator("#recovery-box")).toBeHidden();
+  await expect(page.locator("#result-title")).toHaveText("강화 실패");
+});
+
+test("10강 이후 파괴와 파괴 보호권이 작동", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
+    state.gold = 5000;
+    state.currentArmor = { level: 10 };
+    state.protectionTickets = 1;
+    state.scraps = 0;
+    state.pendingRecovery = null;
+    localStorage.setItem("armor-enhance-state-v1", JSON.stringify(state));
+    Math.random = () => 0.505;
+  });
+  await page.reload();
+
+  await page.getByLabel(/파괴 보호권 사용 예정/).check();
+  await page.getByRole("button", { name: "강화하기" }).click();
+  await expect(page.locator("#stage-caption")).toHaveText("+10");
+  await expect(page.locator("#result-title")).toHaveText("파괴 방지 성공");
+  await expect(page.locator("#ticket-value")).toHaveText("0");
+
+  await page.getByRole("button", { name: "강화하기" }).click();
   await expect(page.locator("#armor-name")).toHaveText("갑옷 없음");
   await expect(page.locator("#recovery-box")).toBeVisible();
-  await expect(page.locator("#scrap-value")).toHaveText("1");
+  await expect(page.locator("#scrap-value")).toHaveText("6");
 
   await page.getByRole("button", { name: "새 +0 갑옷 받기" }).click();
   await expect(page.locator("#armor-name")).toHaveText("낡은 갑옷");
@@ -75,11 +100,11 @@ test("조각으로 갑옷을 복구하고 새로고침 후 상태를 유지", as
   await expect(page.locator("#armor-name")).toHaveText("보강된 갑옷");
 });
 
-test("+15 달성 결과를 표시하고 기록을 유지", async ({ page }) => {
+test("+20 달성 결과를 표시하고 기록을 유지", async ({ page }) => {
   await page.addInitScript(() => {
     const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
     state.gold = 1000000;
-    state.currentArmor = { level: 14 };
+    state.currentArmor = { level: 19 };
     state.pendingRecovery = null;
     localStorage.setItem("armor-enhance-state-v1", JSON.stringify(state));
   });
@@ -89,7 +114,7 @@ test("+15 달성 결과를 표시하고 기록을 유지", async ({ page }) => {
 
   await expect(page.locator("#result-title")).toHaveText("전설의 갑옷 완성!");
   await expect(page.locator("#legendary-state")).toHaveText("달성 완료");
-  await expect(page.locator("#stage-caption")).toHaveText("+15");
+  await expect(page.locator("#stage-caption")).toHaveText("+20");
 });
 
 test("데이터 초기화 후 처음 상태로 돌아감", async ({ page }) => {

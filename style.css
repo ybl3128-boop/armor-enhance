@@ -301,7 +301,7 @@ h3 {
 
 .milestone-track {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 7px;
   margin-top: 24px;
 }
@@ -367,6 +367,14 @@ h3 {
 .stat-row .chance-value {
   color: var(--gold-light);
   font-size: 1.08rem;
+}
+
+#failure-chance-value {
+  color: var(--muted-light);
+}
+
+#destruction-chance-value {
+  color: var(--red);
 }
 
 .protection-option {

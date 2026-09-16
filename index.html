@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="낡은 갑옷을 +15까지 강화해 전설의 대장장이가 되는 웹게임"
+      content="낡은 갑옷을 +20까지 강화해 전설의 대장장이가 되는 웹게임"
     />
     <title>갑옷 강화하기</title>
     <link rel="stylesheet" href="./style.css" />
@@ -16,7 +16,7 @@
         <div>
           <p class="eyebrow">FORGE PROTOTYPE 0.1</p>
           <h1>갑옷 강화하기</h1>
-          <p class="subtitle">+15 갑옷을 만들고 전설의 대장장이가 되어보세요.</p>
+          <p class="subtitle">+20 갑옷을 만들고 전설의 대장장이가 되어보세요.</p>
         </div>
         <div class="top-actions">
           <button class="text-button" id="export-logs-button" type="button">
@@ -94,6 +94,10 @@
               <span>+15</span>
               <small>전설</small>
             </div>
+            <div class="milestone final-milestone" data-level="20">
+              <span>+20</span>
+              <small>최종</small>
+            </div>
           </div>
         </section>
 
@@ -113,7 +117,15 @@
             </div>
             <div class="stat-row">
               <span>성공 확률</span>
-              <strong class="chance-value" id="chance-value">100%</strong>
+              <strong class="chance-value" id="success-chance-value">100%</strong>
+            </div>
+            <div class="stat-row">
+              <span>실패 유지</span>
+              <strong id="failure-chance-value">0%</strong>
+            </div>
+            <div class="stat-row">
+              <span>파괴 확률</span>
+              <strong id="destruction-chance-value">0%</strong>
             </div>
             <div class="stat-row">
               <span>강화 비용</span>
@@ -129,8 +141,8 @@
             <input id="protection-checkbox" type="checkbox" />
             <span class="checkbox-mark" aria-hidden="true"></span>
             <span>
-              <strong>방지권 사용 예정</strong>
-              <small>실패 시 방지권 1장을 사용해 갑옷을 지킵니다.</small>
+              <strong>파괴 보호권 사용 예정</strong>
+              <small>파괴 결과일 때만 보호권 1장을 사용합니다.</small>
             </span>
           </label>
 
@@ -176,7 +188,7 @@
         <div class="goal-emblem">15</div>
         <div>
           <p class="section-kicker">ULTIMATE GOAL</p>
-          <h2>+15 전설의 갑옷</h2>
+          <h2>+20 전설의 갑옷</h2>
           <p>여러 세션에 걸쳐 최고의 갑옷을 완성하세요.</p>
         </div>
         <span class="goal-state" id="legendary-state">도전 중</span>

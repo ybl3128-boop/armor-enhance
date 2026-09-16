@@ -2,11 +2,18 @@ const STORAGE_KEY = "armor-enhance-state-v1";
 const LOG_STORAGE_KEY = "armor-enhance-logs-v1";
 const INITIAL_GOLD = 5000;
 const INITIAL_PROTECTION_TICKETS = 1;
-const MAX_LEVEL = 15;
+const MAX_LEVEL = 20;
 
 const PROBABILITIES = [
-  1.0, 0.95, 0.9, 0.85, 0.78, 0.7, 0.62, 0.54,
-  0.46, 0.38, 0.32, 0.26, 0.2, 0.15, 0.1
+  1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65,
+  0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.3,
+  0.3, 0.3, 0.3, 0.3
+];
+
+const DESTRUCTION_PROBABILITIES = [
+  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+  0.01, 0.01, 0.02, 0.02, 0.03, 0.03,
+  0.04, 0.05, 0.06, 0.08
 ];
 
 const RESTORE_OPTIONS = [
@@ -21,7 +28,8 @@ const LEVEL_NAMES = {
   5: "강철 갑옷",
   7: "기사 갑옷",
   10: "정예 기사 갑옷",
-  15: "전설의 갑옷"
+  15: "전설의 갑옷",
+  20: "최종 전설의 갑옷"
 };
 
 const LEVEL_DESCRIPTIONS = {
@@ -30,7 +38,8 @@ const LEVEL_DESCRIPTIONS = {
   5: "평범한 병사의 장비로 손색이 없습니다.",
   7: "기사의 문장을 달아도 어울릴 만합니다.",
   10: "숙련된 장인이 만든 정예 갑옷입니다.",
-  15: "대장장이의 이름을 전설로 남길 갑옷입니다."
+  15: "대장장이의 이름을 전설로 남길 갑옷입니다.",
+  20: "이 대장간의 최종 기록이 될 갑옷입니다."
 };
 
 const numberFormatter = new Intl.NumberFormat("ko-KR");
@@ -52,7 +61,9 @@ const elements = {
   armorDescription: document.querySelector("#armor-description"),
   armorStatus: document.querySelector("#armor-status"),
   nextLevel: document.querySelector("#next-level-value"),
-  chance: document.querySelector("#chance-value"),
+  successChance: document.querySelector("#success-chance-value"),
+  failureChance: document.querySelector("#failure-chance-value"),
+  destructionChance: document.querySelector("#destruction-chance-value"),
   cost: document.querySelector("#cost-value"),
   sellValue: document.querySelector("#sell-value"),
   enhanceButton: document.querySelector("#enhance-button"),
@@ -164,8 +175,14 @@ function getCurrentLevel() {
   return state.currentArmor?.level ?? null;
 }
 
-function getProbability(level) {
-  return PROBABILITIES[level] ?? 0;
+function getOutcomeRates(level) {
+  const success = PROBABILITIES[level] ?? 0;
+  const destruction = DESTRUCTION_PROBABILITIES[level] ?? 0;
+  return {
+    success,
+    destruction,
+    failure: Math.max(0, 1 - success - destruction)
+  };
 }
 
 function getEnhanceCost(level) {
@@ -231,7 +248,9 @@ function render() {
   const level = getCurrentLevel();
   const hasArmor = level !== null;
   const isMaxLevel = level === MAX_LEVEL;
-  const probability = hasArmor ? getProbability(level) : 0;
+  const rates = hasArmor && !isMaxLevel
+    ? getOutcomeRates(level)
+    : { success: 0, failure: 0, destruction: 0 };
   const cost = hasArmor && !isMaxLevel ? getEnhanceCost(level) : 0;
   const sellPrice = hasArmor ? getSellPrice(level) : 0;
 
@@ -253,9 +272,15 @@ function render() {
   elements.nextLevel.textContent = hasArmor
     ? isMaxLevel ? "완료" : formatLevel(level + 1)
     : "대기";
-  elements.chance.textContent = hasArmor && !isMaxLevel
-    ? `${Math.round(probability * 100)}%`
-    : isMaxLevel ? "100%" : "-";
+  elements.successChance.textContent = hasArmor && !isMaxLevel
+    ? `${Math.round(rates.success * 100)}%`
+    : isMaxLevel ? "완료" : "-";
+  elements.failureChance.textContent = hasArmor && !isMaxLevel
+    ? `${Math.round(rates.failure * 100)}%`
+    : isMaxLevel ? "0%" : "-";
+  elements.destructionChance.textContent = hasArmor && !isMaxLevel
+    ? `${Math.round(rates.destruction * 100)}%`
+    : isMaxLevel ? "0%" : "-";
   elements.cost.textContent = hasArmor && !isMaxLevel
     ? `${formatNumber(cost)} G`
     : isMaxLevel ? "전설 달성" : "-";
@@ -324,24 +349,31 @@ function enhanceArmor() {
     return;
   }
 
-  const probability = getProbability(level);
+  const rates = getOutcomeRates(level);
   const willUseProtection =
     elements.protectionCheckbox.checked && state.protectionTickets > 0;
 
   logEvent("probability_view", {
     level,
-    displayedProbability: probability,
+    successProbability: rates.success,
+    failureProbability: rates.failure,
+    destructionProbability: rates.destruction,
     cost
   });
   logEvent("reinforce_attempt", {
     level,
     cost,
-    displayedProbability: probability,
+    successProbability: rates.success,
+    failureProbability: rates.failure,
+    destructionProbability: rates.destruction,
     protectionPlanned: willUseProtection
   });
 
   state.gold -= cost;
-  const success = Math.random() < probability;
+  const roll = Math.random();
+  const success = roll < rates.success;
+  const destruction =
+    !success && roll < rates.success + rates.destruction;
 
   if (success) {
     const nextLevel = level + 1;
@@ -355,7 +387,7 @@ function enhanceArmor() {
       });
       showResult(
         "전설의 갑옷 완성!",
-        "+15 갑옷을 만들었습니다. 전설의 대장장이가 되었습니다.",
+        "+20 갑옷을 만들었습니다. 전설의 대장장이가 되었습니다.",
         "success"
       );
     } else {
@@ -369,25 +401,44 @@ function enhanceArmor() {
       result: "success",
       beforeLevel: level,
       afterLevel: nextLevel,
-      finalProbability: probability
+      successProbability: rates.success,
+      failureProbability: rates.failure,
+      destructionProbability: rates.destruction
+    });
+  } else if (!destruction) {
+    elements.protectionCheckbox.checked = false;
+    showResult(
+      "강화 실패",
+      `${formatLevel(level)} 갑옷은 유지됩니다. 강화 비용만 소모되었습니다.`,
+      "failure"
+    );
+    logEvent("reinforce_result", {
+      result: "failure_kept",
+      beforeLevel: level,
+      afterLevel: level,
+      successProbability: rates.success,
+      failureProbability: rates.failure,
+      destructionProbability: rates.destruction
     });
   } else if (willUseProtection) {
     state.protectionTickets -= 1;
     elements.protectionCheckbox.checked = false;
     showResult(
-      "강화 실패",
-      `방지권을 사용해 ${formatLevel(level)} 갑옷을 지켰습니다.`,
+      "파괴 방지 성공",
+      `파괴 보호권을 사용해 ${formatLevel(level)} 갑옷을 지켰습니다.`,
       "failure"
     );
     logEvent("use_protection", {
       level,
-      item: "protection_ticket"
+      item: "destruction_protection_ticket"
     });
     logEvent("reinforce_result", {
-      result: "failure_protected",
+      result: "destruction_protected",
       beforeLevel: level,
       afterLevel: level,
-      finalProbability: probability
+      successProbability: rates.success,
+      failureProbability: rates.failure,
+      destructionProbability: rates.destruction
     });
   } else {
     const scrapsGained = getScrapsForBreak(level);
@@ -408,10 +459,12 @@ function enhanceArmor() {
       protectionTickets: state.protectionTickets
     });
     logEvent("reinforce_result", {
-      result: "failure_broken",
+      result: "destruction",
       beforeLevel: level,
       afterLevel: null,
-      finalProbability: probability
+      successProbability: rates.success,
+      failureProbability: rates.failure,
+      destructionProbability: rates.destruction
     });
   }
 
