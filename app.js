@@ -159,6 +159,8 @@ function createInitialState() {
     sessionFailures: 0,
     skipEnhancementCinematic: false,
     finalSummaryOpen: false,
+    sessionResultType: null,
+    bankruptcyAcknowledged: false,
     lastSessionId: null,
     pendingRecovery: null,
     lastSavedAt: null
@@ -256,7 +258,11 @@ function getSellPrice(level) {
     ? 0.6
     : level === 2
       ? 0.7
-      : 1.2 * Math.pow(1.18, level - 3);
+      : level === 3
+        ? 0.8
+        : level === 4
+          ? 0.9
+          : 1.35 + (level - 5) * 0.15;
   return Math.floor(getTotalInvestment(level) * saleMultiplier);
 }
 
@@ -344,7 +350,7 @@ function render() {
     : "판매 불가";
 
   elements.enhanceButton.disabled =
-    !hasArmor || isMaxLevel || state.gold < cost;
+    !hasArmor || isMaxLevel;
   elements.enhanceButton.textContent = isMaxLevel ? "전설 달성" : "강화하기";
   elements.sellButton.disabled = !hasArmor || sellPrice <= 0;
   elements.protectionCheckbox.disabled =
@@ -369,13 +375,19 @@ function render() {
 }
 
 function renderFinalSummary() {
-  const showSummary = state.legendaryClear && state.finalSummaryOpen;
+  const showSummary = state.finalSummaryOpen;
   elements.finalSummaryModal.classList.toggle("hidden", !showSummary);
   if (!showSummary) return;
 
-  elements.finalSummaryTitle.textContent = "전설의 대장장이가 되었습니다.";
-  elements.finalSummaryGuidance.textContent =
-    "+20 갑옷 완성에 성공했습니다. 결과를 확인하고 계속 플레이할 수 있습니다.";
+  const isBankrupt = state.sessionResultType === "bankruptcy";
+  elements.finalSummaryTitle.textContent = isBankrupt
+    ? "대장간 운영이 종료되었습니다."
+    : "전설의 대장장이가 되었습니다.";
+  elements.finalSummaryGuidance.textContent = isBankrupt
+    ? "강화 비용을 감당할 골드가 부족합니다. 이번 세션의 결과를 확인하세요."
+    : "+20 갑옷 완성에 성공했습니다. 결과를 확인하고 계속 플레이할 수 있습니다.";
+  document.querySelector(".final-summary-badge").textContent =
+    isBankrupt ? "BANKRUPT" : "CLEAR";
   elements.finalMaxLevel.textContent = formatLevel(state.highestLevel);
   elements.finalDestructionCount.textContent =
     `${formatNumber(state.destructionCount)}회`;
@@ -391,6 +403,7 @@ function renderFinalSummary() {
 
 function closeFinalSummary() {
   state.finalSummaryOpen = false;
+  state.bankruptcyAcknowledged = true;
   persistAndRender();
 }
 
@@ -457,12 +470,21 @@ function performEnhancement() {
 
   const cost = getEnhanceCost(level);
   if (state.gold < cost) {
+    state.sessionResultType = "bankruptcy";
+    state.finalSummaryOpen = true;
+    state.bankruptcyAcknowledged = false;
     logEvent("bankruptcy_blocked", {
       level,
       cost,
       goldBefore: state.gold,
       scrapsBefore: state.scraps
     });
+    logEvent("session_bankruptcy", {
+      level,
+      cost,
+      ...getTelemetrySnapshot()
+    });
+    persistAndRender();
     showResult("골드가 부족합니다.", `${formatNumber(cost)} G가 필요합니다.`, "failure");
     return;
   }
@@ -515,6 +537,7 @@ function performEnhancement() {
     if (nextLevel === MAX_LEVEL) {
       state.legendaryClear = true;
       state.finalSummaryOpen = true;
+      state.sessionResultType = "legendary";
       logEvent("legendary_clear", {
         level: nextLevel,
         totalSessions: state.sessionCount,

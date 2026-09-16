@@ -35,6 +35,21 @@ test("낮은 단계 판매로 골드가 복사되지 않음", async ({ page }) =
   await expect(page.locator("#result-title")).toHaveText("갑옷 판매 완료");
 });
 
+test("+5부터 판매 수익이 발생", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
+    state.gold = 1000000;
+    state.currentArmor = { level: 5 };
+    state.pendingRecovery = null;
+    localStorage.setItem("armor-enhance-state-v1", JSON.stringify(state));
+  });
+  await page.reload();
+
+  await expect(page.locator("#sell-value")).toHaveText("491 G");
+  await page.getByRole("button", { name: "판매하기" }).click();
+  await expect(page.locator("#gold-value")).toHaveText("1,000,491");
+});
+
 test("일반 강화 실패는 비용만 소모하고 등급을 유지", async ({ page }) => {
   await page.getByRole("button", { name: "강화하기" }).click();
   await page.getByRole("button", { name: "강화하기" }).click();
@@ -142,6 +157,25 @@ test("+17 강화 연출 스킵 설정", async ({ page }) => {
 
   await expect(page.locator("#enhancement-cinematic")).toBeHidden();
   await expect(page.locator("#stage-caption")).toHaveText("+18");
+});
+
+test("골드 부족 시 세션 결과 팝업 표시", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
+    state.gold = 0;
+    state.currentArmor = { level: 0 };
+    state.pendingRecovery = null;
+    localStorage.setItem("armor-enhance-state-v1", JSON.stringify(state));
+  });
+  await page.reload();
+
+  await page.getByRole("button", { name: "강화하기" }).click();
+  await expect(page.locator("#final-summary-modal")).toBeVisible();
+  await expect(page.locator("#final-summary-title")).toHaveText("대장간 운영이 종료되었습니다.");
+  await expect(page.locator(".final-summary-badge")).toHaveText("BANKRUPT");
+  await expect(page.locator("#final-max-level")).toHaveText("+0");
+  await page.getByRole("button", { name: "계속 플레이" }).click();
+  await expect(page.locator("#final-summary-modal")).toBeHidden();
 });
 
 test("데이터 초기화 후 처음 상태로 돌아감", async ({ page }) => {
