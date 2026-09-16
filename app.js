@@ -199,9 +199,11 @@ function getTotalInvestment(level) {
 
 function getSellPrice(level) {
   if (level <= 0) return 0;
-  const saleMultiplier = level <= 4
-    ? 0.5 + level * 0.1
-    : 1.35 + (level - 5) * 0.15;
+  const saleMultiplier = level === 1
+    ? 0.6
+    : level === 2
+      ? 0.7
+      : 1.2 * Math.pow(1.18, level - 3);
   return Math.floor(getTotalInvestment(level) * saleMultiplier);
 }
 
