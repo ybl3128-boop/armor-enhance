@@ -518,6 +518,73 @@ h3 {
   padding: 15px;
 }
 
+.final-summary {
+  margin-top: 16px;
+  border: 1px solid rgba(245, 189, 98, 0.34);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(245, 189, 98, 0.14), transparent 13rem),
+    rgba(245, 189, 98, 0.06);
+  padding: 16px;
+}
+
+.final-summary-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.final-summary-heading h3 {
+  margin-bottom: 0;
+  color: var(--gold-light);
+}
+
+.final-summary-badge {
+  border: 1px solid rgba(245, 189, 98, 0.45);
+  border-radius: 999px;
+  background: rgba(245, 189, 98, 0.12);
+  color: var(--gold-light);
+  padding: 6px 9px;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.final-summary-guidance {
+  margin: 12px 0 14px;
+  color: var(--muted-light);
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.final-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+}
+
+.final-stats-grid > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.final-stats-grid span {
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.final-stats-grid strong {
+  color: var(--gold-light);
+  font-size: 0.78rem;
+}
+
 .recovery-heading {
   align-items: center;
 }
@@ -699,5 +766,9 @@ h3 {
 
   .goal-state {
     align-self: center;
+  }
+
+  .final-stats-grid {
+    grid-template-columns: 1fr;
   }
 }

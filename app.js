@@ -78,6 +78,15 @@ const elements = {
   recoveryScrapMessage: document.querySelector("#recovery-scrap-message"),
   recoveryOptions: document.querySelector("#recovery-options"),
   newArmorButton: document.querySelector("#new-armor-button"),
+  finalSummary: document.querySelector("#final-summary"),
+  finalSummaryTitle: document.querySelector("#final-summary-title"),
+  finalSummaryGuidance: document.querySelector("#final-summary-guidance"),
+  finalMaxLevel: document.querySelector("#final-max-level"),
+  finalDestructionCount: document.querySelector("#final-destruction-count"),
+  finalSessionMaxGold: document.querySelector("#final-session-max-gold"),
+  finalSessionAttempts: document.querySelector("#final-session-attempts"),
+  finalSessionSuccesses: document.querySelector("#final-session-successes"),
+  finalSessionFailures: document.querySelector("#final-session-failures"),
   legendaryBanner: document.querySelector("#legendary-banner"),
   legendaryState: document.querySelector("#legendary-state"),
   exportLogsButton: document.querySelector("#export-logs-button"),
@@ -87,6 +96,9 @@ const elements = {
 state.sessionCount += 1;
 state.lastSessionId = sessionId;
 state.sessionMaxGold = state.gold;
+state.sessionAttempts = 0;
+state.sessionSuccesses = 0;
+state.sessionFailures = 0;
 saveState();
 logEvent("session_start", {
   screenWidth: window.innerWidth,
@@ -125,6 +137,9 @@ function createInitialState() {
     destructionCount: 0,
     sessionCount: 0,
     sessionMaxGold: INITIAL_GOLD,
+    sessionAttempts: 0,
+    sessionSuccesses: 0,
+    sessionFailures: 0,
     lastSessionId: null,
     pendingRecovery: null,
     lastSavedAt: null
@@ -326,10 +341,32 @@ function render() {
       : "강화 가능";
 
   renderRecovery();
+  renderFinalSummary();
   elements.legendaryState.textContent = state.legendaryClear
     ? "달성 완료"
     : `최고 기록 ${formatLevel(state.highestLevel)}`;
   elements.legendaryState.classList.toggle("completed", state.legendaryClear);
+}
+
+function renderFinalSummary() {
+  const showSummary = state.legendaryClear;
+  elements.finalSummary.classList.toggle("hidden", !showSummary);
+  if (!showSummary) return;
+
+  elements.finalSummaryTitle.textContent = "전설의 대장장이가 되었습니다.";
+  elements.finalSummaryGuidance.textContent =
+    "+20 갑옷 완성에 성공했습니다. 결과를 확인하고 계속 플레이할 수 있습니다.";
+  elements.finalMaxLevel.textContent = formatLevel(state.highestLevel);
+  elements.finalDestructionCount.textContent =
+    `${formatNumber(state.destructionCount)}회`;
+  elements.finalSessionMaxGold.textContent =
+    `${formatNumber(state.sessionMaxGold)} G`;
+  elements.finalSessionAttempts.textContent =
+    `${formatNumber(state.sessionAttempts)}회`;
+  elements.finalSessionSuccesses.textContent =
+    `${formatNumber(state.sessionSuccesses)}회`;
+  elements.finalSessionFailures.textContent =
+    `${formatNumber(state.sessionFailures)}회`;
 }
 
 function updateArmorVisual(level) {
@@ -406,10 +443,16 @@ function enhanceArmor() {
   });
 
   state.gold -= cost;
+  state.sessionAttempts += 1;
   const roll = Math.random();
   const success = roll < rates.success;
   const destruction =
     !success && roll < rates.success + rates.destruction;
+  if (success) {
+    state.sessionSuccesses += 1;
+  } else {
+    state.sessionFailures += 1;
+  }
 
   if (success) {
     const nextLevel = level + 1;
@@ -420,6 +463,9 @@ function enhanceArmor() {
       logEvent("legendary_clear", {
         level: nextLevel,
         totalSessions: state.sessionCount,
+        sessionAttempts: state.sessionAttempts,
+        sessionSuccesses: state.sessionSuccesses,
+        sessionFailures: state.sessionFailures,
         ...getTelemetrySnapshot()
       });
       showResult(
@@ -659,6 +705,9 @@ window.addEventListener("beforeunload", () => {
     playerId: state.playerId,
     sessionMaxGold: state.sessionMaxGold,
     destructionCount: state.destructionCount,
+    sessionAttempts: state.sessionAttempts,
+    sessionSuccesses: state.sessionSuccesses,
+    sessionFailures: state.sessionFailures,
     ...getTelemetrySnapshot()
   });
   saveState();
