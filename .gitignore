@@ -9,5 +9,6 @@ test-results/
 *.log
 armor-enhance-logs-*.json
 피드백/
+*리포트*.md
 .DS_Store
 Thumbs.db
