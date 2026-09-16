@@ -270,6 +270,19 @@ function getScrapsForBreak(level) {
   return Math.max(1, Math.ceil((level + 1) / 2));
 }
 
+function canSellForNextEnhancement(level, cost) {
+  return level > 0 && state.gold + getSellPrice(level) >= cost;
+}
+
+function canRestoreAfterBreak() {
+  if (!state.pendingRecovery || state.currentArmor) return false;
+  return RESTORE_OPTIONS.some(
+    (option) =>
+      option.level <= state.pendingRecovery.brokenLevel &&
+      state.scraps >= option.scraps
+  );
+}
+
 function getArmorTier(level) {
   return Object.keys(LEVEL_NAMES)
     .map(Number)
@@ -470,6 +483,20 @@ function performEnhancement() {
 
   const cost = getEnhanceCost(level);
   if (state.gold < cost) {
+    const canSell = canSellForNextEnhancement(level, cost);
+    const canRestore = canRestoreAfterBreak();
+    if (canSell || canRestore) {
+      showResult(
+        "골드가 부족합니다.",
+        canSell
+          ? "현재 갑옷을 판매하면 다음 강화를 진행할 수 있습니다."
+          : "조각으로 갑옷을 복구하면 다시 도전할 수 있습니다.",
+        "failure"
+      );
+      persistAndRender();
+      return;
+    }
+
     state.sessionResultType = "bankruptcy";
     state.finalSummaryOpen = true;
     state.bankruptcyAcknowledged = false;

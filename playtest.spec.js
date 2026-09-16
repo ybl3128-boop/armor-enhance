@@ -178,6 +178,26 @@ test("골드 부족 시 세션 결과 팝업 표시", async ({ page }) => {
   await expect(page.locator("#final-summary-modal")).toBeHidden();
 });
 
+test("현재 갑옷을 팔아 진행할 수 있으면 파산하지 않음", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
+    state.gold = 0;
+    state.currentArmor = { level: 5 };
+    state.pendingRecovery = null;
+    localStorage.setItem("armor-enhance-state-v1", JSON.stringify(state));
+  });
+  await page.reload();
+
+  await page.getByRole("button", { name: "강화하기" }).click();
+  await expect(page.locator("#final-summary-modal")).toBeHidden();
+  await expect(page.locator("#result-title")).toHaveText("골드가 부족합니다.");
+  await expect(page.locator("#result-message")).toContainText("판매하면");
+
+  await page.getByRole("button", { name: "판매하기" }).click();
+  await expect(page.locator("#stage-caption")).toHaveText("+0");
+  await expect(page.locator("#gold-value")).toHaveText("491");
+});
+
 test("데이터 초기화 후 처음 상태로 돌아감", async ({ page }) => {
   await page.getByRole("button", { name: "강화하기" }).click();
   await expect(page.locator("#stage-caption")).toHaveText("+1");
