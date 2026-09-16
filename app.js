@@ -46,6 +46,7 @@ const numberFormatter = new Intl.NumberFormat("ko-KR");
 const sessionId = createId();
 let state = loadState();
 let hasLoggedSessionEnd = false;
+let cinematicOpen = false;
 
 const elements = {
   gold: document.querySelector("#gold-value"),
@@ -70,6 +71,11 @@ const elements = {
   sellButton: document.querySelector("#sell-button"),
   protectionCheckbox: document.querySelector("#protection-checkbox"),
   protectionOption: document.querySelector("#protection-option"),
+  skipCinematicCheckbox: document.querySelector("#skip-cinematic-checkbox"),
+  cinematicModal: document.querySelector("#enhancement-cinematic"),
+  cinematicTitle: document.querySelector("#cinematic-title"),
+  cinematicMessage: document.querySelector("#cinematic-message"),
+  cinematicConfirmButton: document.querySelector("#cinematic-confirm-button"),
   saveState: document.querySelector("#save-state"),
   resultBox: document.querySelector("#result-box"),
   resultTitle: document.querySelector("#result-title"),
@@ -116,6 +122,14 @@ function bindEvents() {
   elements.newArmorButton.addEventListener("click", () => startNewArmor("break"));
   elements.exportLogsButton.addEventListener("click", exportLogs);
   elements.resetButton.addEventListener("click", resetData);
+  elements.skipCinematicCheckbox.addEventListener("change", () => {
+    state.skipEnhancementCinematic = elements.skipCinematicCheckbox.checked;
+    persistAndRender();
+  });
+  elements.cinematicConfirmButton.addEventListener("click", () => {
+    closeEnhancementCinematic();
+    performEnhancement();
+  });
 }
 
 function createId() {
@@ -140,6 +154,7 @@ function createInitialState() {
     sessionAttempts: 0,
     sessionSuccesses: 0,
     sessionFailures: 0,
+    skipEnhancementCinematic: false,
     lastSessionId: null,
     pendingRecovery: null,
     lastSavedAt: null
@@ -330,6 +345,7 @@ function render() {
   elements.sellButton.disabled = !hasArmor || sellPrice <= 0;
   elements.protectionCheckbox.disabled =
     !hasArmor || state.protectionTickets <= 0 || isMaxLevel;
+  elements.skipCinematicCheckbox.checked = state.skipEnhancementCinematic;
   elements.protectionOption.classList.toggle(
     "hidden",
     !hasArmor || isMaxLevel
@@ -398,6 +414,35 @@ function updateMilestones(highestLevel) {
 }
 
 function enhanceArmor() {
+  const level = getCurrentLevel();
+  if (
+    level !== null &&
+    level >= 17 &&
+    !state.skipEnhancementCinematic &&
+    !cinematicOpen
+  ) {
+    openEnhancementCinematic(level);
+    return;
+  }
+  performEnhancement();
+}
+
+function openEnhancementCinematic(level) {
+  cinematicOpen = true;
+  elements.cinematicTitle.textContent =
+    `${formatLevel(level)} 강화에 도전하고 있습니다!`;
+  elements.cinematicMessage.innerHTML =
+    "이제부터는 엄청난 강화 구간입니다.<br />대장장이의 집중력을 보여주세요.";
+  elements.cinematicModal.classList.remove("hidden");
+  elements.cinematicConfirmButton.focus();
+}
+
+function closeEnhancementCinematic() {
+  cinematicOpen = false;
+  elements.cinematicModal.classList.add("hidden");
+}
+
+function performEnhancement() {
   const level = getCurrentLevel();
   if (level === null || level >= MAX_LEVEL) return;
 

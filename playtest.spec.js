@@ -47,7 +47,7 @@ test("일반 강화 실패는 비용만 소모하고 등급을 유지", async ({
 test("10강 이후 파괴와 파괴 보호권이 작동", async ({ page }) => {
   await page.addInitScript(() => {
     const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
-    state.gold = 5000;
+    state.gold = 1000000;
     state.currentArmor = { level: 10 };
     state.protectionTickets = 1;
     state.scraps = 0;
@@ -111,6 +111,8 @@ test("+20 달성 결과를 표시하고 기록을 유지", async ({ page }) => {
   await page.reload();
 
   await page.getByRole("button", { name: "강화하기" }).click();
+  await expect(page.locator("#enhancement-cinematic")).toBeVisible();
+  await page.getByRole("button", { name: "강화 결과 확인" }).click();
 
   await expect(page.locator("#result-title")).toHaveText("전설의 갑옷 완성!");
   await expect(page.locator("#legendary-state")).toHaveText("달성 완료");
@@ -120,6 +122,23 @@ test("+20 달성 결과를 표시하고 기록을 유지", async ({ page }) => {
   await expect(page.locator("#final-session-attempts")).toHaveText("1회");
   await expect(page.locator("#final-session-successes")).toHaveText("1회");
   await expect(page.locator("#final-session-failures")).toHaveText("0회");
+});
+
+test("+17 강화 연출 스킵 설정", async ({ page }) => {
+  await page.addInitScript(() => {
+    const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
+    state.gold = 1000000;
+    state.currentArmor = { level: 17 };
+    state.pendingRecovery = null;
+    localStorage.setItem("armor-enhance-state-v1", JSON.stringify(state));
+  });
+  await page.reload();
+
+  await page.getByLabel(/\+17 강화 연출 건너뛰기/).check();
+  await page.getByRole("button", { name: "강화하기" }).click();
+
+  await expect(page.locator("#enhancement-cinematic")).toBeHidden();
+  await expect(page.locator("#stage-caption")).toHaveText("+18");
 });
 
 test("데이터 초기화 후 처음 상태로 돌아감", async ({ page }) => {

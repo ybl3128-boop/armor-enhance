@@ -146,6 +146,15 @@
             </span>
           </label>
 
+          <label class="cinematic-option">
+            <input id="skip-cinematic-checkbox" type="checkbox" />
+            <span class="checkbox-mark" aria-hidden="true"></span>
+            <span>
+              <strong>+17 강화 연출 건너뛰기</strong>
+              <small>연출만 건너뛰며 확률·비용·결과에는 영향이 없습니다.</small>
+            </span>
+          </label>
+
           <div class="action-buttons">
             <button class="primary-button" id="enhance-button" type="button">
               강화하기
@@ -236,6 +245,22 @@
       <footer class="footer-note">
         초기 프로토타입: 갑옷은 네모 도형으로 표시됩니다. 모든 게임 상태는 이 브라우저에 자동 저장됩니다.
       </footer>
+    </div>
+
+    <div class="cinematic-modal hidden" id="enhancement-cinematic" role="dialog" aria-modal="true" aria-labelledby="cinematic-title">
+      <div class="cinematic-card">
+        <p class="section-kicker">DANGEROUS ENHANCEMENT</p>
+        <div class="cinematic-symbol">!</div>
+        <h2 id="cinematic-title">엄청난 강화에 도전하고 있습니다!</h2>
+        <p id="cinematic-message">
+          이제부터는 한 번의 실패도 쉽게 넘길 수 없습니다.<br />
+          대장장이의 집중력을 보여주세요.
+        </p>
+        <p class="cinematic-note">이 연출은 게임 결과와 확률에 영향을 주지 않습니다.</p>
+        <button class="primary-button" id="cinematic-confirm-button" type="button">
+          강화 결과 확인
+        </button>
+      </div>
     </div>
 
     <script src="./app.js"></script>

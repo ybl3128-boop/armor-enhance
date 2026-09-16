@@ -424,6 +424,57 @@ h3 {
   transform: rotate(-45deg) translate(1px, -1px);
 }
 
+.cinematic-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  margin: 0 0 16px;
+  padding: 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(116, 216, 219, 0.04);
+}
+
+.cinematic-option input {
+  position: absolute;
+  opacity: 0;
+}
+
+.cinematic-option:has(input:checked) {
+  border-color: rgba(116, 216, 219, 0.42);
+  background: rgba(116, 216, 219, 0.09);
+}
+
+.cinematic-option input:checked + .checkbox-mark {
+  border-color: var(--cyan);
+  background: var(--cyan);
+}
+
+.cinematic-option input:checked + .checkbox-mark::after {
+  width: 7px;
+  height: 4px;
+  border-bottom: 2px solid #0d3436;
+  border-left: 2px solid #0d3436;
+  content: "";
+  transform: rotate(-45deg) translate(1px, -1px);
+}
+
+.cinematic-option strong,
+.cinematic-option small {
+  display: block;
+}
+
+.cinematic-option strong {
+  color: #b9f2f3;
+  font-size: 0.78rem;
+}
+
+.cinematic-option small {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 0.7rem;
+}
+
 .protection-option strong,
 .protection-option small {
   display: block;
@@ -680,6 +731,94 @@ h3 {
 
 .hidden {
   display: none !important;
+}
+
+.cinematic-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(4, 7, 11, 0.82);
+  backdrop-filter: blur(8px);
+}
+
+.cinematic-card {
+  position: relative;
+  width: min(480px, 100%);
+  overflow: hidden;
+  border: 1px solid rgba(245, 189, 98, 0.55);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(245, 189, 98, 0.22), transparent 16rem),
+    linear-gradient(145deg, #252131, #10151e);
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.62);
+  padding: 30px;
+  text-align: center;
+  animation: cinematic-enter 0.35s ease-out;
+}
+
+.cinematic-card .section-kicker {
+  color: var(--gold);
+}
+
+.cinematic-symbol {
+  display: grid;
+  width: 70px;
+  height: 70px;
+  margin: 18px auto;
+  place-items: center;
+  border: 1px solid rgba(245, 189, 98, 0.62);
+  border-radius: 50%;
+  background: rgba(245, 189, 98, 0.12);
+  box-shadow: 0 0 45px rgba(245, 189, 98, 0.22);
+  color: var(--gold-light);
+  font-size: 2.4rem;
+  font-weight: 900;
+  animation: cinematic-pulse 1.2s ease-in-out infinite;
+}
+
+.cinematic-card h2 {
+  color: var(--gold-light);
+  font-size: 1.5rem;
+}
+
+.cinematic-card p {
+  color: var(--muted-light);
+  font-size: 0.83rem;
+  line-height: 1.65;
+}
+
+.cinematic-card .cinematic-note {
+  margin: 18px 0;
+  color: var(--muted);
+  font-size: 0.68rem;
+}
+
+.cinematic-card .primary-button {
+  width: 100%;
+}
+
+@keyframes cinematic-enter {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes cinematic-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.08);
+  }
 }
 
 .flash-success .armor-shape {
