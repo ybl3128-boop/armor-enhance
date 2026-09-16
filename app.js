@@ -86,11 +86,13 @@ const elements = {
 
 state.sessionCount += 1;
 state.lastSessionId = sessionId;
+state.sessionMaxGold = state.gold;
 saveState();
 logEvent("session_start", {
   screenWidth: window.innerWidth,
   screenHeight: window.innerHeight,
-  sessionCount: state.sessionCount
+  sessionCount: state.sessionCount,
+  playerId: state.playerId
 });
 
 bindEvents();
@@ -114,12 +116,15 @@ function createId() {
 function createInitialState() {
   return {
     gold: INITIAL_GOLD,
+    playerId: createId(),
     currentArmor: { level: 0 },
     protectionTickets: INITIAL_PROTECTION_TICKETS,
     scraps: 0,
     highestLevel: 0,
     legendaryClear: false,
+    destructionCount: 0,
     sessionCount: 0,
+    sessionMaxGold: INITIAL_GOLD,
     lastSessionId: null,
     pendingRecovery: null,
     lastSavedAt: null
@@ -133,6 +138,7 @@ function loadState() {
     return {
       ...createInitialState(),
       ...saved,
+      playerId: saved.playerId ?? createId(),
       currentArmor: saved.currentArmor === undefined
         ? { level: 0 }
         : saved.currentArmor
@@ -144,6 +150,7 @@ function loadState() {
 }
 
 function saveState() {
+  state.sessionMaxGold = Math.max(state.sessionMaxGold ?? 0, state.gold);
   state.lastSavedAt = new Date().toISOString();
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   if (elements.saveState) {
@@ -157,6 +164,7 @@ function logEvent(type, payload = {}) {
     eventId: createId(),
     type,
     timestamp: new Date().toISOString(),
+    playerId: state.playerId,
     sessionId,
     payload
   });
@@ -173,6 +181,17 @@ function loadLogs() {
 
 function getCurrentLevel() {
   return state.currentArmor?.level ?? null;
+}
+
+function getTelemetrySnapshot() {
+  return {
+    goldAfter: state.gold,
+    scrapsAfter: state.scraps,
+    protectionTicketsAfter: state.protectionTickets,
+    currentLevelAfter: getCurrentLevel(),
+    highestLevelAfter: state.highestLevel,
+    destructionCountAfter: state.destructionCount
+  };
 }
 
 function getOutcomeRates(level) {
@@ -347,6 +366,12 @@ function enhanceArmor() {
 
   const cost = getEnhanceCost(level);
   if (state.gold < cost) {
+    logEvent("bankruptcy_blocked", {
+      level,
+      cost,
+      goldBefore: state.gold,
+      scrapsBefore: state.scraps
+    });
     showResult("골드가 부족합니다.", `${formatNumber(cost)} G가 필요합니다.`, "failure");
     return;
   }
@@ -354,13 +379,19 @@ function enhanceArmor() {
   const rates = getOutcomeRates(level);
   const willUseProtection =
     elements.protectionCheckbox.checked && state.protectionTickets > 0;
+  const goldBefore = state.gold;
+  const scrapsBefore = state.scraps;
+  const protectionTicketsBefore = state.protectionTickets;
 
   logEvent("probability_view", {
     level,
     successProbability: rates.success,
     failureProbability: rates.failure,
     destructionProbability: rates.destruction,
-    cost
+    cost,
+    goldBefore,
+    scrapsBefore,
+    protectionTicketsBefore
   });
   logEvent("reinforce_attempt", {
     level,
@@ -368,7 +399,10 @@ function enhanceArmor() {
     successProbability: rates.success,
     failureProbability: rates.failure,
     destructionProbability: rates.destruction,
-    protectionPlanned: willUseProtection
+    protectionPlanned: willUseProtection,
+    goldBefore,
+    scrapsBefore,
+    protectionTicketsBefore
   });
 
   state.gold -= cost;
@@ -385,7 +419,8 @@ function enhanceArmor() {
       state.legendaryClear = true;
       logEvent("legendary_clear", {
         level: nextLevel,
-        totalSessions: state.sessionCount
+        totalSessions: state.sessionCount,
+        ...getTelemetrySnapshot()
       });
       showResult(
         "전설의 갑옷 완성!",
@@ -405,7 +440,8 @@ function enhanceArmor() {
       afterLevel: nextLevel,
       successProbability: rates.success,
       failureProbability: rates.failure,
-      destructionProbability: rates.destruction
+      destructionProbability: rates.destruction,
+      ...getTelemetrySnapshot()
     });
   } else if (!destruction) {
     elements.protectionCheckbox.checked = false;
@@ -420,7 +456,8 @@ function enhanceArmor() {
       afterLevel: level,
       successProbability: rates.success,
       failureProbability: rates.failure,
-      destructionProbability: rates.destruction
+      destructionProbability: rates.destruction,
+      ...getTelemetrySnapshot()
     });
   } else if (willUseProtection) {
     state.protectionTickets -= 1;
@@ -432,7 +469,8 @@ function enhanceArmor() {
     );
     logEvent("use_protection", {
       level,
-      item: "destruction_protection_ticket"
+      item: "destruction_protection_ticket",
+      ...getTelemetrySnapshot()
     });
     logEvent("reinforce_result", {
       result: "destruction_protected",
@@ -440,10 +478,12 @@ function enhanceArmor() {
       afterLevel: level,
       successProbability: rates.success,
       failureProbability: rates.failure,
-      destructionProbability: rates.destruction
+      destructionProbability: rates.destruction,
+      ...getTelemetrySnapshot()
     });
   } else {
     const scrapsGained = getScrapsForBreak(level);
+    state.destructionCount += 1;
     state.scraps += scrapsGained;
     state.currentArmor = null;
     state.pendingRecovery = {
@@ -458,7 +498,8 @@ function enhanceArmor() {
     logEvent("armor_break", {
       level,
       scrapsGained,
-      protectionTickets: state.protectionTickets
+      protectionTickets: state.protectionTickets,
+      ...getTelemetrySnapshot()
     });
     logEvent("reinforce_result", {
       result: "destruction",
@@ -466,7 +507,8 @@ function enhanceArmor() {
       afterLevel: null,
       successProbability: rates.success,
       failureProbability: rates.failure,
-      destructionProbability: rates.destruction
+      destructionProbability: rates.destruction,
+      ...getTelemetrySnapshot()
     });
   }
 
@@ -478,17 +520,21 @@ function sellArmor() {
   if (level === null || level <= 0) return;
 
   const price = getSellPrice(level);
+  const goldBefore = state.gold;
   state.gold += price;
-  logEvent("sell_armor", {
-    level,
-    price
-  });
   state.currentArmor = { level: 0 };
   state.pendingRecovery = null;
   elements.protectionCheckbox.checked = false;
+  logEvent("sell_armor", {
+    level,
+    price,
+    goldBefore,
+    ...getTelemetrySnapshot()
+  });
   logEvent("new_armor_start", {
     reason: "sell",
-    level: 0
+    level: 0,
+    ...getTelemetrySnapshot()
   });
   showResult(
     "갑옷 판매 완료",
@@ -504,7 +550,8 @@ function startNewArmor(reason) {
   elements.protectionCheckbox.checked = false;
   logEvent("new_armor_start", {
     reason,
-    level: 0
+    level: 0,
+    ...getTelemetrySnapshot()
   });
   showResult(
     "새 갑옷 준비 완료",
@@ -521,7 +568,8 @@ function restoreArmor(level, scrapsRequired) {
   state.pendingRecovery = null;
   logEvent("armor_restore", {
     level,
-    scraps: scrapsRequired
+    scraps: scrapsRequired,
+    ...getTelemetrySnapshot()
   });
   showResult(
     "갑옷 복구 완료",
@@ -607,7 +655,11 @@ window.addEventListener("beforeunload", () => {
   logEvent("session_end", {
     highestLevel: state.highestLevel,
     gold: state.gold,
-    currentLevel: getCurrentLevel()
+    currentLevel: getCurrentLevel(),
+    playerId: state.playerId,
+    sessionMaxGold: state.sessionMaxGold,
+    destructionCount: state.destructionCount,
+    ...getTelemetrySnapshot()
   });
   saveState();
 });

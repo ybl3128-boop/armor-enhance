@@ -132,3 +132,22 @@ test("데이터 초기화 후 처음 상태로 돌아감", async ({ page }) => {
   await expect(page.locator("#scrap-value")).toHaveText("0");
   await expect(page.locator("#highest-level-value")).toHaveText("+0");
 });
+
+test("로그에 익명 플레이어 ID와 전후 상태가 기록됨", async ({ page }) => {
+  await page.getByRole("button", { name: "강화하기" }).click();
+
+  const logData = await page.evaluate(() => {
+    const logs = JSON.parse(localStorage.getItem("armor-enhance-logs-v1"));
+    return {
+      session: logs.find((event) => event.type === "session_start"),
+      attempt: logs.find((event) => event.type === "reinforce_attempt"),
+      result: logs.find((event) => event.type === "reinforce_result")
+    };
+  });
+
+  expect(logData.session.playerId).toBeTruthy();
+  expect(logData.attempt.playerId).toBe(logData.session.playerId);
+  expect(logData.attempt.payload.goldBefore).toBe(10000);
+  expect(logData.result.payload.goldAfter).toBe(9975);
+  expect(logData.result.payload.currentLevelAfter).toBe(1);
+});
