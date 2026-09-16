@@ -570,13 +570,30 @@ h3 {
 }
 
 .final-summary {
-  margin-top: 16px;
+  width: min(560px, 100%);
+  margin-top: 0;
   border: 1px solid rgba(245, 189, 98, 0.34);
   border-radius: 12px;
   background:
     radial-gradient(circle at 90% 0%, rgba(245, 189, 98, 0.14), transparent 13rem),
     rgba(245, 189, 98, 0.06);
   padding: 16px;
+}
+
+.final-summary-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 21;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(4, 7, 11, 0.84);
+  backdrop-filter: blur(8px);
+}
+
+.final-summary-close {
+  width: 100%;
+  margin-top: 16px;
 }
 
 .final-summary-heading {

@@ -93,6 +93,8 @@ const elements = {
   finalSessionAttempts: document.querySelector("#final-session-attempts"),
   finalSessionSuccesses: document.querySelector("#final-session-successes"),
   finalSessionFailures: document.querySelector("#final-session-failures"),
+  finalSummaryModal: document.querySelector("#final-summary-modal"),
+  finalSummaryCloseButton: document.querySelector("#final-summary-close-button"),
   legendaryBanner: document.querySelector("#legendary-banner"),
   legendaryState: document.querySelector("#legendary-state"),
   exportLogsButton: document.querySelector("#export-logs-button"),
@@ -130,6 +132,7 @@ function bindEvents() {
     closeEnhancementCinematic();
     performEnhancement();
   });
+  elements.finalSummaryCloseButton.addEventListener("click", closeFinalSummary);
 }
 
 function createId() {
@@ -155,6 +158,7 @@ function createInitialState() {
     sessionSuccesses: 0,
     sessionFailures: 0,
     skipEnhancementCinematic: false,
+    finalSummaryOpen: false,
     lastSessionId: null,
     pendingRecovery: null,
     lastSavedAt: null
@@ -365,8 +369,8 @@ function render() {
 }
 
 function renderFinalSummary() {
-  const showSummary = state.legendaryClear;
-  elements.finalSummary.classList.toggle("hidden", !showSummary);
+  const showSummary = state.legendaryClear && state.finalSummaryOpen;
+  elements.finalSummaryModal.classList.toggle("hidden", !showSummary);
   if (!showSummary) return;
 
   elements.finalSummaryTitle.textContent = "전설의 대장장이가 되었습니다.";
@@ -383,6 +387,11 @@ function renderFinalSummary() {
     `${formatNumber(state.sessionSuccesses)}회`;
   elements.finalSessionFailures.textContent =
     `${formatNumber(state.sessionFailures)}회`;
+}
+
+function closeFinalSummary() {
+  state.finalSummaryOpen = false;
+  persistAndRender();
 }
 
 function updateArmorVisual(level) {
@@ -505,6 +514,7 @@ function performEnhancement() {
     state.highestLevel = Math.max(state.highestLevel, nextLevel);
     if (nextLevel === MAX_LEVEL) {
       state.legendaryClear = true;
+      state.finalSummaryOpen = true;
       logEvent("legendary_clear", {
         level: nextLevel,
         totalSessions: state.sessionCount,

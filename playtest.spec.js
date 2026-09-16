@@ -117,11 +117,14 @@ test("+20 달성 결과를 표시하고 기록을 유지", async ({ page }) => {
   await expect(page.locator("#result-title")).toHaveText("전설의 갑옷 완성!");
   await expect(page.locator("#legendary-state")).toHaveText("달성 완료");
   await expect(page.locator("#stage-caption")).toHaveText("+20");
+  await expect(page.locator("#final-summary-modal")).toBeVisible();
   await expect(page.locator("#final-summary")).toBeVisible();
   await expect(page.locator("#final-max-level")).toHaveText("+20");
   await expect(page.locator("#final-session-attempts")).toHaveText("1회");
   await expect(page.locator("#final-session-successes")).toHaveText("1회");
   await expect(page.locator("#final-session-failures")).toHaveText("0회");
+  await page.getByRole("button", { name: "계속 플레이" }).click();
+  await expect(page.locator("#final-summary-modal")).toBeHidden();
 });
 
 test("+17 강화 연출 스킵 설정", async ({ page }) => {
