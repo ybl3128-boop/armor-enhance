@@ -19,6 +19,7 @@ loadFirebaseLogger();
 
 const STORAGE_KEY = "armor-enhance-state-v1";
 const LOG_STORAGE_KEY = "armor-enhance-logs-v1";
+const LOG_SCHEMA_VERSION = 2; // LOG_SCHEMA.md 와 반드시 일치시킬 것
 const INITIAL_GOLD = 10000;
 const INITIAL_PROTECTION_TICKETS = 1;
 const MAX_LEVEL = 20;
@@ -160,7 +161,7 @@ logEvent("session_start", {
   screenWidth: window.innerWidth,
   screenHeight: window.innerHeight,
   sessionCount: state.sessionCount,
-  playerId: state.playerId
+  ...getTelemetrySnapshot()
 });
 
 bindEvents();
@@ -251,6 +252,7 @@ function logEvent(type, payload = {}) {
   logs.push({
     eventId,
     type,
+    schemaVersion: LOG_SCHEMA_VERSION,
     timestamp,
     playerId: state.playerId,
     sessionId,
@@ -559,16 +561,11 @@ function performEnhancement() {
     state.sessionResultType = "bankruptcy";
     state.finalSummaryOpen = true;
     state.bankruptcyAcknowledged = false;
-    logEvent("bankruptcy_blocked", {
-      level,
-      cost,
+    logEvent("bankruptcy", {
+      levelAttempted: level,
+      costRequired: cost,
       goldBefore: state.gold,
       scrapsBefore: state.scraps
-    });
-    logEvent("session_bankruptcy", {
-      level,
-      cost,
-      ...getTelemetrySnapshot()
     });
     persistAndRender();
     showResult("골드가 부족합니다.", `${formatNumber(cost)} G가 필요합니다.`, "failure");
@@ -582,18 +579,8 @@ function performEnhancement() {
   const scrapsBefore = state.scraps;
   const protectionTicketsBefore = state.protectionTickets;
 
-  logEvent("probability_view", {
-    level,
-    successProbability: rates.success,
-    failureProbability: rates.failure,
-    destructionProbability: rates.destruction,
-    cost,
-    goldBefore,
-    scrapsBefore,
-    protectionTicketsBefore
-  });
-  logEvent("reinforce_attempt", {
-    level,
+  logEvent("enhance_attempt", {
+    levelBefore: level,
     cost,
     successProbability: rates.success,
     failureProbability: rates.failure,
@@ -624,7 +611,7 @@ function performEnhancement() {
       state.legendaryClear = true;
       state.finalSummaryOpen = true;
       state.sessionResultType = "legendary";
-      logEvent("legendary_clear", {
+      logEvent("legendary_achieved", {
         level: nextLevel,
         totalSessions: state.sessionCount,
         sessionAttempts: state.sessionAttempts,
@@ -644,10 +631,13 @@ function performEnhancement() {
         "success"
       );
     }
-    logEvent("reinforce_result", {
+    logEvent("enhance_result", {
       result: "success",
-      beforeLevel: level,
-      afterLevel: nextLevel,
+      levelBefore: level,
+      levelAfter: nextLevel,
+      protectionUsed: false,
+      scrapsGained: 0,
+      cost,
       successProbability: rates.success,
       failureProbability: rates.failure,
       destructionProbability: rates.destruction,
@@ -660,10 +650,13 @@ function performEnhancement() {
       `${formatLevel(level)} 갑옷은 유지됩니다. 강화 비용만 소모되었습니다.`,
       "failure"
     );
-    logEvent("reinforce_result", {
+    logEvent("enhance_result", {
       result: "failure_kept",
-      beforeLevel: level,
-      afterLevel: level,
+      levelBefore: level,
+      levelAfter: level,
+      protectionUsed: false,
+      scrapsGained: 0,
+      cost,
       successProbability: rates.success,
       failureProbability: rates.failure,
       destructionProbability: rates.destruction,
@@ -677,15 +670,13 @@ function performEnhancement() {
       `파괴 보호권을 사용해 ${formatLevel(level)} 갑옷을 지켰습니다.`,
       "failure"
     );
-    logEvent("use_protection", {
-      level,
-      item: "destruction_protection_ticket",
-      ...getTelemetrySnapshot()
-    });
-    logEvent("reinforce_result", {
-      result: "destruction_protected",
-      beforeLevel: level,
-      afterLevel: level,
+    logEvent("enhance_result", {
+      result: "destroy_protected",
+      levelBefore: level,
+      levelAfter: level,
+      protectionUsed: true,
+      scrapsGained: 0,
+      cost,
       successProbability: rates.success,
       failureProbability: rates.failure,
       destructionProbability: rates.destruction,
@@ -705,16 +696,13 @@ function performEnhancement() {
       `${formatLevel(level)} 갑옷이 파괴되었습니다. 조각 ${scrapsGained}개를 얻었습니다.`,
       "failure"
     );
-    logEvent("armor_break", {
-      level,
+    logEvent("enhance_result", {
+      result: "destroyed",
+      levelBefore: level,
+      levelAfter: null,
+      protectionUsed: false,
       scrapsGained,
-      protectionTickets: state.protectionTickets,
-      ...getTelemetrySnapshot()
-    });
-    logEvent("reinforce_result", {
-      result: "destruction",
-      beforeLevel: level,
-      afterLevel: null,
+      cost,
       successProbability: rates.success,
       failureProbability: rates.failure,
       destructionProbability: rates.destruction,
@@ -735,16 +723,11 @@ function sellArmor() {
   state.currentArmor = { level: 0 };
   state.pendingRecovery = null;
   elements.protectionCheckbox.checked = false;
-  logEvent("sell_armor", {
+  logEvent("armor_sold", {
     level,
     price,
     goldBefore,
-    ...getTelemetrySnapshot()
-  });
-  logEvent("new_armor_start", {
-    reason: "sell",
-    level: 0,
-    ...getTelemetrySnapshot()
+    goldAfter: state.gold
   });
   showResult(
     "갑옷 판매 완료",
@@ -758,10 +741,11 @@ function startNewArmor(reason) {
   state.currentArmor = { level: 0 };
   state.pendingRecovery = null;
   elements.protectionCheckbox.checked = false;
-  logEvent("new_armor_start", {
-    reason,
-    level: 0,
-    ...getTelemetrySnapshot()
+  logEvent("new_armor_started", {
+    reason: reason === "break" ? "break_abandoned" : reason,
+    goldAfter: state.gold,
+    scrapsAfter: state.scraps,
+    protectionTicketsAfter: state.protectionTickets
   });
   showResult(
     "새 갑옷 준비 완료",
@@ -773,13 +757,15 @@ function startNewArmor(reason) {
 
 function restoreArmor(level, scrapsRequired) {
   if (!state.pendingRecovery || state.scraps < scrapsRequired) return;
+  const scrapsBefore = state.scraps;
   state.scraps -= scrapsRequired;
   state.currentArmor = { level };
   state.pendingRecovery = null;
-  logEvent("armor_restore", {
+  logEvent("armor_restored", {
     level,
-    scraps: scrapsRequired,
-    ...getTelemetrySnapshot()
+    scrapsUsed: scrapsRequired,
+    scrapsBefore,
+    scrapsAfter: state.scraps
   });
   showResult(
     "갑옷 복구 완료",
@@ -853,6 +839,11 @@ function resetData() {
     "저장된 게임 데이터와 로그를 모두 삭제하고 처음부터 시작할까요?"
   );
   if (!confirmed) return;
+  logEvent("data_reset", {
+    highestLevelBeforeReset: state.highestLevel,
+    sessionCountBeforeReset: state.sessionCount,
+    goldBeforeReset: state.gold
+  });
   hasLoggedSessionEnd = true;
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(LOG_STORAGE_KEY);
@@ -863,17 +854,15 @@ window.addEventListener("beforeunload", async () => {
   if (hasLoggedSessionEnd) return;
   hasLoggedSessionEnd = true;
 
-  // 로컬 로그 저장
+  // 로컬 로그 저장 (LOG_SCHEMA.md의 session_end 정의와 일치시킴)
   logEvent("session_end", {
-    highestLevel: state.highestLevel,
-    gold: state.gold,
-    currentLevel: getCurrentLevel(),
-    playerId: state.playerId,
-    sessionMaxGold: state.sessionMaxGold,
-    destructionCount: state.destructionCount,
+    sessionDurationMs: Date.now() - firebaseSessionStartTime,
     sessionAttempts: state.sessionAttempts,
     sessionSuccesses: state.sessionSuccesses,
     sessionFailures: state.sessionFailures,
+    sessionMaxGold: state.sessionMaxGold,
+    destructionCountTotal: state.destructionCount,
+    endReason: "unload",
     ...getTelemetrySnapshot()
   });
 
