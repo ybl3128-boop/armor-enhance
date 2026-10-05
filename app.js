@@ -1,3 +1,22 @@
+// Firebase 로깅 (타입/값은 런타임에 로드됨)
+let fbLogger = null;
+let firebaseReady = false;
+
+// Firebase 동적 로드
+async function loadFirebaseLogger() {
+  try {
+    const { generateUserFingerprint, registerOrUpdateUser, startSession, logEvent, endSession, batchLogEvents } = await import('./firebase-logger.js');
+    fbLogger = { generateUserFingerprint, registerOrUpdateUser, startSession, logEvent, endSession, batchLogEvents };
+    firebaseReady = true;
+    console.log('✅ Firebase 로거 로드됨');
+  } catch (err) {
+    console.warn('⚠️ Firebase 로더 로드 실패:', err.message);
+    firebaseReady = false;
+  }
+}
+
+loadFirebaseLogger();
+
 const STORAGE_KEY = "armor-enhance-state-v1";
 const LOG_STORAGE_KEY = "armor-enhance-logs-v1";
 const INITIAL_GOLD = 10000;
@@ -47,6 +66,35 @@ const sessionId = createId();
 let state = loadState();
 let hasLoggedSessionEnd = false;
 let cinematicOpen = false;
+let firebaseUserId = null;
+let firebaseSessionStartTime = Date.now();
+
+// Firebase 초기화 및 세션 시작
+async function initializeFirebase() {
+  if (!firebaseReady || !fbLogger) {
+    console.warn('Firebase 로거가 준비되지 않았습니다.');
+    return;
+  }
+
+  try {
+    // 1. 사용자 ID 생성 (브라우저 지문 기반)
+    firebaseUserId = fbLogger.generateUserFingerprint();
+    
+    // 2. 사용자 등록
+    await fbLogger.registerOrUpdateUser(firebaseUserId, state.playerId);
+    
+    // 3. 세션 시작 기록
+    firebaseSessionStartTime = Date.now();
+    await fbLogger.startSession(firebaseUserId, sessionId);
+    
+    console.log('✅ Firebase 초기화 완료:', firebaseUserId);
+  } catch (err) {
+    console.error('❌ Firebase 초기화 오류:', err);
+  }
+}
+
+// 모든 Firebase 준비 완료 시 초기화
+setTimeout(initializeFirebase, 500);
 
 const elements = {
   gold: document.querySelector("#gold-value"),
@@ -195,16 +243,27 @@ function saveState() {
 }
 
 function logEvent(type, payload = {}) {
+  const eventId = createId();
+  const timestamp = new Date().toISOString();
+
+  // 로컬 스토리지에 저장 (기존 방식)
   const logs = loadLogs();
   logs.push({
-    eventId: createId(),
+    eventId,
     type,
-    timestamp: new Date().toISOString(),
+    timestamp,
     playerId: state.playerId,
     sessionId,
     payload
   });
   localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs.slice(-2000)));
+
+  // Firebase에 비동기로 저장 (실패해도 게임 계속 진행)
+  if (firebaseReady && fbLogger && firebaseUserId) {
+    fbLogger.logEvent(firebaseUserId, sessionId, type, payload).catch(err => {
+      console.warn('Firebase 로그 저장 실패:', err);
+    });
+  }
 }
 
 function loadLogs() {
@@ -800,9 +859,11 @@ function resetData() {
   window.location.reload();
 }
 
-window.addEventListener("beforeunload", () => {
+window.addEventListener("beforeunload", async () => {
   if (hasLoggedSessionEnd) return;
   hasLoggedSessionEnd = true;
+
+  // 로컬 로그 저장
   logEvent("session_end", {
     highestLevel: state.highestLevel,
     gold: state.gold,
@@ -815,5 +876,22 @@ window.addEventListener("beforeunload", () => {
     sessionFailures: state.sessionFailures,
     ...getTelemetrySnapshot()
   });
+
+  // Firebase 세션 종료 기록
+  if (firebaseReady && fbLogger && firebaseUserId) {
+    try {
+      await fbLogger.endSession(firebaseUserId, sessionId, {
+        finalLevel: state.highestLevel,
+        finalGold: state.gold,
+        destructionCount: state.destructionCount,
+        maxGoldDuringSession: state.sessionMaxGold,
+        isBankrupt: state.sessionResultType === 'bankruptcy',
+        startTime: new Date(firebaseSessionStartTime)
+      });
+    } catch (err) {
+      console.warn('Firebase 세션 종료 기록 실패:', err);
+    }
+  }
+
   saveState();
 });
