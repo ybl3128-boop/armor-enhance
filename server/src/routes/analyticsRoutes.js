@@ -1,5 +1,7 @@
 import express from 'express';
+import XLSX from 'xlsx';
 import { query } from '../db.js';
+import { generateExcelExport, generateUserExcel } from '../services/exportService.js';
 
 const router = express.Router();
 
@@ -100,6 +102,43 @@ router.get('/export/json', async (req, res) => {
   } catch (err) {
     console.error('Error exporting JSON:', err);
     res.status(500).json({ error: 'Failed to export logs' });
+  }
+});
+
+// GET /api/analytics/export/xlsx
+// Export all logs as Excel file
+router.get('/export/xlsx', async (req, res) => {
+  try {
+    const workbook = await generateExcelExport();
+    const filename = `armor-enhance-logs-${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    const buffer = Buffer.from(XLSX.write(workbook, { type: 'binary' }), 'binary');
+    res.send(buffer);
+  } catch (err) {
+    console.error('Error exporting XLSX:', err);
+    res.status(500).json({ error: 'Failed to export Excel file' });
+  }
+});
+
+// GET /api/analytics/export/user/:userId/xlsx
+// Export user-specific logs as Excel file
+router.get('/export/user/:userId/xlsx', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const workbook = await generateUserExcel(userId);
+    const filename = `armor-enhance-user-${userId}-${new Date().toISOString().split('T')[0]}.xlsx`;
+    
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    
+    const buffer = Buffer.from(XLSX.write(workbook, { type: 'binary' }), 'binary');
+    res.send(buffer);
+  } catch (err) {
+    console.error('Error exporting user XLSX:', err);
+    res.status(500).json({ error: 'Failed to export user Excel file' });
   }
 });
 
