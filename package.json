@@ -4,9 +4,16 @@
   "private": true,
   "description": "A Korean browser game prototype about enhancing armor to +15.",
   "scripts": {
-    "test:e2e": "playwright test --reporter=line"
+    "test:e2e": "playwright test --reporter=line",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "firebase": "^10.6.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.63.0"
+    "@playwright/test": "^1.63.0",
+    "vite": "^4.5.0"
   }
 }
