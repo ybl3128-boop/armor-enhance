@@ -1,11 +1,11 @@
 import { db } from './firebase-config.js';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
-import XLSX from 'xlsx';
+import * as XLSX from 'xlsx';
 
 /**
  * Firestore에서 모든 데이터를 조회
  */
-async function fetchAllData() {
+export async function fetchAllData() {
   try {
     // 사용자 데이터
     const usersSnap = await getDocs(collection(db, 'users'));
