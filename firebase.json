@@ -1,0 +1,21 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "node_modules/**",
+      "server/**",
+      "test-results/**",
+      "playtest.spec.js",
+      "playwright.config.js",
+      "dist/**",
+      "*.md",
+      "*.tar.gz",
+      "firebase-config.js",
+      "firebase-export.js",
+      "firebase-logger.js",
+      "admin-dashboard.*"
+    ]
+  }
+}
