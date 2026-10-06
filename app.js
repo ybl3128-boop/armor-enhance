@@ -243,7 +243,7 @@ function saveState() {
   }
 }
 
-function logLocalEvent(type, payload = {}) {
+function logEvent(type, payload = {}) {
   const eventId = createId();
   const timestamp = new Date().toISOString();
 
