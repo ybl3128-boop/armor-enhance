@@ -669,7 +669,6 @@ function performEnhancement() {
       ...getTelemetrySnapshot()
     });
   } else if (!destruction) {
-    elements.protectionCheckbox.checked = false;
     showResult(
       "강화 실패",
       `${formatLevel(level)} 갑옷은 유지됩니다. 강화 비용만 소모되었습니다.`,
