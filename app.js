@@ -1,20 +1,39 @@
 // ============================================
-// FIREBASE 설정 및 함수 (직접 포함)
+// FIREBASE 설정 및 함수 (CDN 로드)
 // ============================================
-import { initializeApp } from 'firebase/app';
-import { getFirestore, collection, addDoc, setDoc, doc, Timestamp, writeBatch, increment, updateDoc } from 'firebase/firestore';
 
-const firebaseConfig = {
-  apiKey: 'AIzaSyBrANfqNFZfcuIFQxmOqAwfOatuPClCh4A',
-  authDomain: 'armor-enhance.firebaseapp.com',
-  projectId: 'armor-enhance',
-  storageBucket: 'armor-enhance.appspot.com',
-  messagingSenderId: '433425827481',
-  appId: '1:433425827481:web:bfbed6c1bb0f523ddf9a08'
-};
+// Firebase 전역 객체 대기
+let db = null;
+let firebaseInitialized = false;
 
-const fbApp = initializeApp(firebaseConfig);
-const db = getFirestore(fbApp);
+function initializeFirebaseSDK() {
+  const firebaseConfig = {
+    apiKey: 'AIzaSyBrANfqNFZfcuIFQxmOqAwfOatuPClCh4A',
+    authDomain: 'armor-enhance.firebaseapp.com',
+    projectId: 'armor-enhance',
+    storageBucket: 'armor-enhance.appspot.com',
+    messagingSenderId: '433425827481',
+    appId: '1:433425827481:web:bfbed6c1bb0f523ddf9a08'
+  };
+
+  try {
+    firebase.initializeApp(firebaseConfig);
+    db = firebase.firestore();
+    firebaseInitialized = true;
+    console.log('✅ Firebase SDK 초기화됨');
+  } catch (err) {
+    console.error('❌ Firebase 초기화 실패:', err);
+  }
+}
+
+// CDN에서 로드될 때까지 대기 후 초기화
+if (typeof firebase !== 'undefined') {
+  initializeFirebaseSDK();
+} else {
+  document.addEventListener('DOMContentLoaded', () => {
+    setTimeout(initializeFirebaseSDK, 100);
+  });
+}
 
 function generateUserFingerprint() {
   const navigator_data = [
@@ -34,12 +53,11 @@ function generateUserFingerprint() {
 }
 
 async function registerOrUpdateUser(userId, fingerprint) {
+  if (!db) return;
   try {
-    const userRef = doc(db, 'users', userId);
-    const now = Timestamp.now();
-    await setDoc(userRef, {
-      firstSeenAt: now,
-      lastSeenAt: now,
+    await db.collection('users').doc(userId).set({
+      firstSeenAt: firebase.firestore.FieldValue.serverTimestamp(),
+      lastSeenAt: firebase.firestore.FieldValue.serverTimestamp(),
       totalSessions: 0,
       fingerprint: fingerprint,
       userAgent: navigator.userAgent,
@@ -55,11 +73,11 @@ async function registerOrUpdateUser(userId, fingerprint) {
 }
 
 async function startSession(userId, sessionId) {
+  if (!db) return;
   try {
-    const sessionRef = doc(db, 'sessions', sessionId);
-    await setDoc(sessionRef, {
+    await db.collection('sessions').doc(sessionId).set({
       userId: userId,
-      startedAt: Timestamp.now(),
+      startedAt: firebase.firestore.FieldValue.serverTimestamp(),
       finalLevel: 0,
       finalGold: 0,
       destructionCount: 0,
@@ -75,14 +93,14 @@ async function startSession(userId, sessionId) {
 }
 
 async function fbLogEvent(userId, sessionId, eventType, payload = {}) {
+  if (!db) return;
   try {
-    const eventRef = collection(db, 'events');
-    await addDoc(eventRef, {
+    await db.collection('events').add({
       eventId: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       userId: userId,
       sessionId: sessionId,
       eventType: eventType,
-      timestamp: Timestamp.now(),
+      timestamp: firebase.firestore.FieldValue.serverTimestamp(),
       payload: payload
     });
   } catch (err) {
@@ -91,28 +109,28 @@ async function fbLogEvent(userId, sessionId, eventType, payload = {}) {
 }
 
 async function endSession(userId, sessionId, sessionData = {}) {
+  if (!db) return;
   try {
-    const batch = writeBatch(db);
-    const now = Timestamp.now();
-    const sessionRef = doc(db, 'sessions', sessionId);
+    const batch = db.batch();
+    const sessionRef = db.collection('sessions').doc(sessionId);
     batch.update(sessionRef, {
-      endedAt: now,
+      endedAt: firebase.firestore.FieldValue.serverTimestamp(),
       finalLevel: sessionData.finalLevel || 0,
       finalGold: sessionData.finalGold || 0,
       destructionCount: sessionData.destructionCount || 0,
       maxGoldDuringSession: sessionData.maxGoldDuringSession || 0,
       isBankrupt: sessionData.isBankrupt || false,
       isCompleted: true,
-      durationSeconds: Math.floor((now.toDate() - sessionData.startTime) / 1000)
+      durationSeconds: Math.floor((Date.now() - sessionData.startTime) / 1000)
     });
-    const userRef = doc(db, 'users', userId);
+    const userRef = db.collection('users').doc(userId);
     batch.update(userRef, {
-      lastSeenAt: now,
-      totalSessions: increment(1),
+      lastSeenAt: firebase.firestore.FieldValue.serverTimestamp(),
+      totalSessions: firebase.firestore.FieldValue.increment(1),
       highestLevel: Math.max(sessionData.finalLevel || 0, 0),
-      totalDestructions: increment(sessionData.destructionCount || 0),
-      totalBankruptcies: increment(sessionData.isBankrupt ? 1 : 0),
-      legendaryClearsCount: increment(sessionData.finalLevel >= 20 ? 1 : 0)
+      totalDestructions: firebase.firestore.FieldValue.increment(sessionData.destructionCount || 0),
+      totalBankruptcies: firebase.firestore.FieldValue.increment(sessionData.isBankrupt ? 1 : 0),
+      legendaryClearsCount: firebase.firestore.FieldValue.increment(sessionData.finalLevel >= 20 ? 1 : 0)
     });
     await batch.commit();
     console.log('✅ Session ended:', sessionId);
@@ -122,17 +140,17 @@ async function endSession(userId, sessionId, sessionData = {}) {
 }
 
 async function batchLogEvents(userId, sessionId, events = []) {
+  if (!db) return;
   try {
-    const batch = writeBatch(db);
-    const eventsRef = collection(db, 'events');
+    const batch = db.batch();
     events.forEach((event) => {
-      const docRef = doc(eventsRef);
+      const docRef = db.collection('events').doc();
       batch.set(docRef, {
         eventId: event.eventId || `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         userId: userId,
         sessionId: sessionId,
         eventType: event.type,
-        timestamp: Timestamp.fromDate(new Date(event.timestamp)),
+        timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         payload: event.payload || {}
       });
     });
