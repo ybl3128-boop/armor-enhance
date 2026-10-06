@@ -1,5 +1,75 @@
 const STORAGE_KEY = "armor-enhance-state-v1";
 const LOG_STORAGE_KEY = "armor-enhance-logs-v1";
+// ============================================
+// FIREBASE 로깅 (CDN firebase-*-compat.js 전역 객체 사용, import 없음)
+// ============================================
+let fbDb = null;
+
+function initFirebaseLogging() {
+  if (typeof firebase === "undefined") {
+    console.warn("⚠️ Firebase SDK가 로드되지 않았습니다.");
+    return;
+  }
+  try {
+    firebase.initializeApp({
+      apiKey: "AIzaSyBrANfqNFZfcuIFQxmOqAwfOatuPClCh4A",
+      authDomain: "armor-enhance.firebaseapp.com",
+      projectId: "armor-enhance",
+      storageBucket: "armor-enhance.appspot.com",
+      messagingSenderId: "433425827481",
+      appId: "1:433425827481:web:bfbed6c1bb0f523ddf9a08"
+    });
+    fbDb = firebase.firestore();
+    console.log("✅ Firebase 초기화 완료");
+  } catch (err) {
+    console.error("❌ Firebase 초기화 실패:", err);
+    fbDb = null;
+  }
+}
+initFirebaseLogging();
+
+function fbSafeCall(promise) {
+  if (!promise || typeof promise.catch !== "function") return;
+  promise.catch((err) => console.warn("Firebase 저장 실패:", err));
+}
+
+function fbLogEvent(eventType, payload) {
+  if (!fbDb) return;
+  fbSafeCall(
+    fbDb.collection("events").add({
+      sessionId,
+      playerId: state?.playerId ?? "unknown",
+      eventType,
+      payload,
+      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+    })
+  );
+}
+
+function fbStartSession() {
+  if (!fbDb) return;
+  fbSafeCall(
+    fbDb.collection("sessions").doc(sessionId).set({
+      playerId: state?.playerId ?? "unknown",
+      startedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      userAgent: navigator.userAgent
+    })
+  );
+}
+
+function fbEndSession(summary) {
+  if (!fbDb) return;
+  fbSafeCall(
+    fbDb.collection("sessions").doc(sessionId).set(
+      {
+        endedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        ...summary
+      },
+      { merge: true }
+    )
+  );
+}
+
 const INITIAL_GOLD = 10000;
 const INITIAL_PROTECTION_TICKETS = 1;
 const MAX_LEVEL = 20;
@@ -108,6 +178,7 @@ state.sessionAttempts = 0;
 state.sessionSuccesses = 0;
 state.sessionFailures = 0;
 saveState();
+fbStartSession();
 logEvent("session_start", {
   screenWidth: window.innerWidth,
   screenHeight: window.innerHeight,
@@ -205,6 +276,9 @@ function logEvent(type, payload = {}) {
     payload
   });
   localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs.slice(-2000)));
+
+  // Firebase에도 비동기 전송 (실패해도 게임 진행에는 영향 없음)
+  fbLogEvent(type, payload);
 }
 
 function loadLogs() {
@@ -803,7 +877,7 @@ function resetData() {
 window.addEventListener("beforeunload", () => {
   if (hasLoggedSessionEnd) return;
   hasLoggedSessionEnd = true;
-  logEvent("session_end", {
+  const summary = {
     highestLevel: state.highestLevel,
     gold: state.gold,
     currentLevel: getCurrentLevel(),
@@ -814,6 +888,8 @@ window.addEventListener("beforeunload", () => {
     sessionSuccesses: state.sessionSuccesses,
     sessionFailures: state.sessionFailures,
     ...getTelemetrySnapshot()
-  });
+  };
+  fbEndSession(summary);
+  logEvent("session_end", summary);
   saveState();
 });
