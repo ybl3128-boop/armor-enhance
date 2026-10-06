@@ -1,21 +1,151 @@
-// Firebase 로깅 (타입/값은 런타임에 로드됨)
-let fbLogger = null;
-let firebaseReady = false;
+// ============================================
+// FIREBASE 설정 및 함수 (직접 포함)
+// ============================================
+import { initializeApp } from 'firebase/app';
+import { getFirestore, collection, addDoc, setDoc, doc, Timestamp, writeBatch, increment, updateDoc } from 'firebase/firestore';
 
-// Firebase 동적 로드
-async function loadFirebaseLogger() {
+const firebaseConfig = {
+  apiKey: 'AIzaSyBrANfqNFZfcuIFQxmOqAwfOatuPClCh4A',
+  authDomain: 'armor-enhance.firebaseapp.com',
+  projectId: 'armor-enhance',
+  storageBucket: 'armor-enhance.appspot.com',
+  messagingSenderId: '433425827481',
+  appId: '1:433425827481:web:bfbed6c1bb0f523ddf9a08'
+};
+
+const fbApp = initializeApp(firebaseConfig);
+const db = getFirestore(fbApp);
+
+function generateUserFingerprint() {
+  const navigator_data = [
+    navigator.userAgent,
+    navigator.language,
+    new Date().getTimezoneOffset(),
+    screen.width + 'x' + screen.height,
+    screen.colorDepth
+  ].join('|');
+  let hash = 0;
+  for (let i = 0; i < navigator_data.length; i++) {
+    const char = navigator_data.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return 'user_' + Math.abs(hash).toString(16);
+}
+
+async function registerOrUpdateUser(userId, fingerprint) {
   try {
-    const { generateUserFingerprint, registerOrUpdateUser, startSession, logEvent, endSession, batchLogEvents } = await import('./firebase-logger.js');
-    fbLogger = { generateUserFingerprint, registerOrUpdateUser, startSession, logEvent, endSession, batchLogEvents };
-    firebaseReady = true;
-    console.log('✅ Firebase 로거 로드됨');
+    const userRef = doc(db, 'users', userId);
+    const now = Timestamp.now();
+    await setDoc(userRef, {
+      firstSeenAt: now,
+      lastSeenAt: now,
+      totalSessions: 0,
+      fingerprint: fingerprint,
+      userAgent: navigator.userAgent,
+      highestLevel: 0,
+      totalDestructions: 0,
+      totalBankruptcies: 0,
+      legendaryClearsCount: 0
+    }, { merge: true });
+    return userId;
   } catch (err) {
-    console.warn('⚠️ Firebase 로더 로드 실패:', err.message);
-    firebaseReady = false;
+    console.error('❌ Error registering user:', err);
   }
 }
 
-loadFirebaseLogger();
+async function startSession(userId, sessionId) {
+  try {
+    const sessionRef = doc(db, 'sessions', sessionId);
+    await setDoc(sessionRef, {
+      userId: userId,
+      startedAt: Timestamp.now(),
+      finalLevel: 0,
+      finalGold: 0,
+      destructionCount: 0,
+      maxGoldDuringSession: 0,
+      isBankrupt: false,
+      isCompleted: false
+    });
+    console.log('✅ Session started:', sessionId);
+    return sessionId;
+  } catch (err) {
+    console.error('❌ Error starting session:', err);
+  }
+}
+
+async function fbLogEvent(userId, sessionId, eventType, payload = {}) {
+  try {
+    const eventRef = collection(db, 'events');
+    await addDoc(eventRef, {
+      eventId: `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      userId: userId,
+      sessionId: sessionId,
+      eventType: eventType,
+      timestamp: Timestamp.now(),
+      payload: payload
+    });
+  } catch (err) {
+    console.error('❌ Error logging event:', err);
+  }
+}
+
+async function endSession(userId, sessionId, sessionData = {}) {
+  try {
+    const batch = writeBatch(db);
+    const now = Timestamp.now();
+    const sessionRef = doc(db, 'sessions', sessionId);
+    batch.update(sessionRef, {
+      endedAt: now,
+      finalLevel: sessionData.finalLevel || 0,
+      finalGold: sessionData.finalGold || 0,
+      destructionCount: sessionData.destructionCount || 0,
+      maxGoldDuringSession: sessionData.maxGoldDuringSession || 0,
+      isBankrupt: sessionData.isBankrupt || false,
+      isCompleted: true,
+      durationSeconds: Math.floor((now.toDate() - sessionData.startTime) / 1000)
+    });
+    const userRef = doc(db, 'users', userId);
+    batch.update(userRef, {
+      lastSeenAt: now,
+      totalSessions: increment(1),
+      highestLevel: Math.max(sessionData.finalLevel || 0, 0),
+      totalDestructions: increment(sessionData.destructionCount || 0),
+      totalBankruptcies: increment(sessionData.isBankrupt ? 1 : 0),
+      legendaryClearsCount: increment(sessionData.finalLevel >= 20 ? 1 : 0)
+    });
+    await batch.commit();
+    console.log('✅ Session ended:', sessionId);
+  } catch (err) {
+    console.error('❌ Error ending session:', err);
+  }
+}
+
+async function batchLogEvents(userId, sessionId, events = []) {
+  try {
+    const batch = writeBatch(db);
+    const eventsRef = collection(db, 'events');
+    events.forEach((event) => {
+      const docRef = doc(eventsRef);
+      batch.set(docRef, {
+        eventId: event.eventId || `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        userId: userId,
+        sessionId: sessionId,
+        eventType: event.type,
+        timestamp: Timestamp.fromDate(new Date(event.timestamp)),
+        payload: event.payload || {}
+      });
+    });
+    await batch.commit();
+    console.log(`✅ Batch logged ${events.length} events`);
+  } catch (err) {
+    console.error('❌ Error batch logging events:', err);
+  }
+}
+
+// Firebase 준비 완료
+let firebaseReady = true;
+console.log('✅ Firebase 로거 로드됨');
 
 const STORAGE_KEY = "armor-enhance-state-v1";
 const LOG_STORAGE_KEY = "armor-enhance-logs-v1";
@@ -72,21 +202,21 @@ let firebaseSessionStartTime = Date.now();
 
 // Firebase 초기화 및 세션 시작
 async function initializeFirebase() {
-  if (!firebaseReady || !fbLogger) {
+  if (!firebaseReady) {
     console.warn('Firebase 로거가 준비되지 않았습니다.');
     return;
   }
 
   try {
     // 1. 사용자 ID 생성 (브라우저 지문 기반)
-    firebaseUserId = fbLogger.generateUserFingerprint();
+    firebaseUserId = generateUserFingerprint();
     
     // 2. 사용자 등록
-    await fbLogger.registerOrUpdateUser(firebaseUserId, state.playerId);
+    await registerOrUpdateUser(firebaseUserId, state.playerId);
     
     // 3. 세션 시작 기록
     firebaseSessionStartTime = Date.now();
-    await fbLogger.startSession(firebaseUserId, sessionId);
+    await startSession(firebaseUserId, sessionId);
     
     console.log('✅ Firebase 초기화 완료:', firebaseUserId);
   } catch (err) {
@@ -261,8 +391,8 @@ function logEvent(type, payload = {}) {
   localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs.slice(-2000)));
 
   // Firebase에 비동기로 저장 (실패해도 게임 계속 진행)
-  if (firebaseReady && fbLogger && firebaseUserId) {
-    fbLogger.logEvent(firebaseUserId, sessionId, type, payload).catch(err => {
+  if (firebaseReady && firebaseUserId) {
+    fbLogEvent(firebaseUserId, sessionId, type, payload).catch(err => {
       console.warn('Firebase 로그 저장 실패:', err);
     });
   }
@@ -867,9 +997,9 @@ window.addEventListener("beforeunload", async () => {
   });
 
   // Firebase 세션 종료 기록
-  if (firebaseReady && fbLogger && firebaseUserId) {
+  if (firebaseReady && firebaseUserId) {
     try {
-      await fbLogger.endSession(firebaseUserId, sessionId, {
+      await endSession(firebaseUserId, sessionId, {
         finalLevel: state.highestLevel,
         finalGold: state.gold,
         destructionCount: state.destructionCount,
