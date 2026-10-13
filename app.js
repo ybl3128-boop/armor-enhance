@@ -72,18 +72,20 @@ function fbEndSession(summary) {
 
 const INITIAL_GOLD = 10000;
 const INITIAL_PROTECTION_TICKETS = 1;
-const MAX_LEVEL = 20;
+const MAX_LEVEL = 30;
 
 const PROBABILITIES = [
-  1.0, 0.95, 0.9, 0.85, 0.8, 0.75, 0.7, 0.65,
-  0.6, 0.55, 0.5, 0.45, 0.4, 0.35, 0.3, 0.3,
-  0.3, 0.3, 0.3, 0.3
+  0.9975, 0.945, 0.8925, 0.8925, 0.84, 0.7875, 0.735, 0.6825,
+  0.63, 0.5775, 0.525, 0.4725, 0.42, 0.3675, 0.315, 0.315,
+  0.315, 0.1575, 0.1575, 0.1575, 0.315, 0.1575, 0.1575, 0.105,
+  0.105, 0.105, 0.0735, 0.0525, 0.0315, 0.0105
 ];
 
 const DESTRUCTION_PROBABILITIES = [
-  0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-  0.01, 0.01, 0.02, 0.02, 0.03, 0.03,
-  0.04, 0.05, 0.06, 0.08
+  0.0025, 0.055, 0.1075, 0.1075, 0.16, 0.2125, 0.265, 0.3175,
+  0.37, 0.4225, 0.475, 0.5275, 0.58, 0.6325, 0.66445, 0.66445,
+  0.66445, 0.7751, 0.7751, 0.75825, 0.10275, 0.12638, 0.1685, 0.179,
+  0.179, 0.179, 0.1853, 0.1895, 0.1937, 0.1979
 ];
 
 const RESTORE_OPTIONS = [
@@ -99,7 +101,9 @@ const LEVEL_NAMES = {
   7: "기사 갑옷",
   10: "정예 기사 갑옷",
   15: "전설의 갑옷",
-  20: "최종 전설의 갑옷"
+  20: "초월 전설의 갑옷",
+  25: "신화 갑옷",
+  30: "최고의 신화 갑옷"
 };
 
 const LEVEL_DESCRIPTIONS = {
@@ -109,7 +113,9 @@ const LEVEL_DESCRIPTIONS = {
   7: "기사의 문장을 달아도 어울릴 만합니다.",
   10: "숙련된 장인이 만든 정예 갑옷입니다.",
   15: "대장장이의 이름을 전설로 남길 갑옷입니다.",
-  20: "이 대장간의 최종 기록이 될 갑옷입니다."
+  20: "여러 전설을 초월한 신기로운 갑옷입니다.",
+  25: "신화 속에만 나오는 갑옷에 가까워졌습니다.",
+  30: "이 대장간의 궁극의 결작이 될 갑옷입니다."
 };
 
 const numberFormatter = new Intl.NumberFormat("ko-KR");
@@ -472,7 +478,7 @@ function renderFinalSummary() {
     : "전설의 대장장이가 되었습니다.";
   elements.finalSummaryGuidance.textContent = isBankrupt
     ? "강화 비용을 감당할 골드가 부족합니다. 이번 세션의 결과를 확인하세요."
-    : "+20 갑옷 완성에 성공했습니다. 결과를 확인하고 계속 플레이할 수 있습니다.";
+    : "+30 갑옷 완성에 성공했습니다. 결과를 확인하고 계속 플레이할 수 있습니다.";
   document.querySelector(".final-summary-badge").textContent =
     isBankrupt ? "BANKRUPT" : "CLEAR";
   elements.finalMaxLevel.textContent = formatLevel(state.highestLevel);
@@ -636,7 +642,7 @@ function performEnhancement() {
     state.currentArmor.level = nextLevel;
     state.highestLevel = Math.max(state.highestLevel, nextLevel);
     if (nextLevel === MAX_LEVEL) {
-      state.legendaryClear = true;
+      state.legendaryClear = getCurrentLevel() >= 30;
       state.finalSummaryOpen = true;
       state.sessionResultType = "legendary";
       logEvent("legendary_clear", {
@@ -649,7 +655,7 @@ function performEnhancement() {
       });
       showResult(
         "전설의 갑옷 완성!",
-        "+20 갑옷을 만들었습니다. 전설의 대장장이가 되었습니다.",
+        "+30 갑옷을 만들었습니다. 전설의 대장장이가 되었습니다.",
         "success"
       );
     } else {
