@@ -522,10 +522,13 @@ function render() {
 
 function renderFinalSummary() {
   const showSummary = state.finalSummaryOpen;
+  const isBankrupt = state.sessionResultType === "bankruptcy";
   elements.finalSummaryModal.classList.toggle("hidden", !showSummary);
+  elements.finalSummaryCloseButton.textContent = isBankrupt
+    ? "새로 시작하기"
+    : "계속 플레이";
   if (!showSummary) return;
 
-  const isBankrupt = state.sessionResultType === "bankruptcy";
   elements.finalSummaryTitle.textContent = isBankrupt
     ? "대장간 운영이 종료되었습니다."
     : "전설의 대장장이가 되었습니다.";
@@ -548,6 +551,15 @@ function renderFinalSummary() {
 }
 
 function closeFinalSummary() {
+  if (state.sessionResultType === "bankruptcy") {
+    const confirmed = window.confirm(
+      "현재 저장된 게임 데이터가 초기화됩니다. 처음부터 새로 시작할까요?"
+    );
+    if (!confirmed) return;
+    resetSavedDataAndReload();
+    return;
+  }
+
   state.finalSummaryOpen = false;
   state.bankruptcyAcknowledged = true;
   persistAndRender();
@@ -860,6 +872,10 @@ function resetData() {
     "저장된 게임 데이터를 모두 삭제하고 처음부터 시작할까요?"
   );
   if (!confirmed) return;
+  resetSavedDataAndReload();
+}
+
+function resetSavedDataAndReload() {
   hasLoggedSessionEnd = true;
   localStorage.removeItem(STORAGE_KEY);
   window.location.reload();

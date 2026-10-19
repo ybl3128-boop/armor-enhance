@@ -187,8 +187,18 @@ test("골드 부족 시 세션 결과 팝업 표시", async ({ page }) => {
   await expect(page.locator("#final-summary-title")).toHaveText("대장간 운영이 종료되었습니다.");
   await expect(page.locator(".final-summary-badge")).toHaveText("BANKRUPT");
   await expect(page.locator("#final-max-level")).toHaveText("+0");
-  await page.getByRole("button", { name: "계속 플레이" }).click();
+  await expect(page.getByRole("button", { name: "새로 시작하기" })).toBeVisible();
+
+  page.once("dialog", async (dialog) => {
+    expect(dialog.message()).toContain("초기화됩니다");
+    await dialog.accept();
+  });
+  await page.getByRole("button", { name: "새로 시작하기" }).click();
+  await page.waitForLoadState("domcontentloaded");
   await expect(page.locator("#final-summary-modal")).toBeHidden();
+  await expect(page.locator("#stage-caption")).toHaveText("+0");
+  await expect(page.locator("#gold-value")).toHaveText("10,000");
+  await expect(page.locator("#ticket-value")).toHaveText("1");
 });
 
 test("현재 갑옷을 팔아 진행할 수 있으면 파산하지 않음", async ({ page }) => {
