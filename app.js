@@ -844,11 +844,9 @@ function showResult(title, message, type = "neutral") {
     "flash-protected",
     "flash-destruction"
   );
-  elements.resultBox.classList.remove("result-flash");
   void elements.armorStage.offsetWidth;
   if (effectTypes.includes(type)) {
     elements.armorStage.classList.add(`flash-${type}`);
-    elements.resultBox.classList.add("result-flash");
   }
 }
 
