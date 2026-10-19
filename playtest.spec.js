@@ -30,6 +30,13 @@ test("초기 화면과 기본 강화 흐름", async ({ page }) => {
 test("테스트 모드에서 테스트 수치를 적용", async ({ page }) => {
   await page.goto(`${gameUrl}?test=1`);
 
+  await page.evaluate(() => {
+    const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
+    state.gold = 54321;
+    state.currentArmor = { level: 4 };
+    localStorage.setItem("armor-enhance-state-v1", JSON.stringify(state));
+  });
+
   await expect(page.locator("#test-panel")).toBeVisible();
   await expect(page.locator(".test-badge")).toHaveText("로그가 저장되지 않습니다.");
 
@@ -44,6 +51,15 @@ test("테스트 모드에서 테스트 수치를 적용", async ({ page }) => {
   await expect(page.locator("#stage-caption")).toHaveText("+15");
   await expect(page.locator("#scrap-value")).toHaveText("8");
   await expect(page.locator("#ticket-value")).toHaveText("2");
+
+  const savedStates = await page.evaluate(() => ({
+    main: JSON.parse(localStorage.getItem("armor-enhance-state-v1")),
+    test: JSON.parse(localStorage.getItem("armor-enhance-test-state-v1"))
+  }));
+  expect(savedStates.main.gold).toBe(54321);
+  expect(savedStates.main.currentArmor.level).toBe(4);
+  expect(savedStates.test.gold).toBe(12345);
+  expect(savedStates.test.currentArmor.level).toBe(15);
 });
 
 test("낮은 단계 판매로 골드가 복사되지 않음", async ({ page }) => {

@@ -337,6 +337,16 @@ h3 {
   content: "";
 }
 
+.armor-stage::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  content: "";
+  opacity: 0;
+  pointer-events: none;
+}
+
 .armor-shape {
   position: relative;
   z-index: 1;
@@ -385,7 +395,7 @@ h3 {
   position: absolute;
   right: 20px;
   bottom: 17px;
-  z-index: 2;
+  z-index: 3;
   color: var(--gold-light);
   font-size: 2.1rem;
   font-weight: 900;
@@ -825,47 +835,83 @@ h3 {
 }
 
 .flash-success .armor-shape {
-  animation: success-pulse 0.7s ease;
+  animation: success-pulse 0.95s ease;
 }
 
 .flash-failure .armor-shape {
-  animation: failure-shake 0.48s ease;
+  animation: failure-shake 0.7s ease;
 }
 
 .flash-protected .armor-shape {
-  animation: protection-shield 0.72s ease;
+  animation: protection-shield 0.95s ease;
 }
 
 .flash-destruction .armor-shape {
-  animation: destruction-break 0.72s ease;
+  animation: destruction-break 0.95s ease;
+}
+
+.armor-stage[data-effect="success"] {
+  border-color: rgba(245, 189, 98, 0.5);
+}
+
+.armor-stage[data-effect="failure"] {
+  border-color: rgba(245, 189, 98, 0.34);
+}
+
+.armor-stage[data-effect="protected"] {
+  border-color: rgba(116, 216, 219, 0.56);
+}
+
+.armor-stage[data-effect="destruction"] {
+  border-color: rgba(239, 124, 124, 0.62);
+}
+
+.flash-success::after {
+  background: radial-gradient(circle at center, rgba(245, 189, 98, 0.42), transparent 58%);
+  animation: stage-overlay-success 0.95s ease;
+}
+
+.flash-failure::after {
+  background: radial-gradient(circle at center, rgba(245, 189, 98, 0.2), transparent 58%);
+  animation: stage-overlay-failure 0.7s ease;
+}
+
+.flash-protected::after {
+  background: radial-gradient(circle at center, rgba(116, 216, 219, 0.4), transparent 58%);
+  animation: stage-overlay-protected 0.95s ease;
+}
+
+.flash-destruction::after {
+  background: radial-gradient(circle at center, rgba(239, 124, 124, 0.42), transparent 62%);
+  animation: stage-overlay-destruction 0.95s ease;
 }
 
 .flash-success {
-  animation: stage-success-flash 0.7s ease;
+  animation: stage-success-flash 0.95s ease;
 }
 
 .flash-failure {
-  animation: stage-failure-flash 0.48s ease;
+  animation: stage-failure-flash 0.7s ease;
 }
 
 .flash-protected {
-  animation: stage-protected-flash 0.72s ease;
+  animation: stage-protected-flash 0.95s ease;
 }
 
 .flash-destruction {
-  animation: stage-destruction-flash 0.72s ease;
+  animation: stage-destruction-flash 0.95s ease;
 }
 
 .flash-success .stage-glow {
-  animation: glow-success 0.7s ease;
+  animation: glow-success 0.95s ease;
 }
 
 .flash-protected .stage-glow {
-  animation: glow-protected 0.72s ease;
+  animation: glow-protected 0.95s ease;
 }
 
 .flash-destruction .stage-glow {
-  animation: glow-destruction 0.72s ease;
+  animation: glow-destruction 0.95s ease;
 }
 
 @keyframes result-pop {
@@ -1008,6 +1054,46 @@ h3 {
   }
 }
 
+@keyframes stage-overlay-success {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  32% {
+    opacity: 1;
+  }
+}
+
+@keyframes stage-overlay-failure {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  35% {
+    opacity: 0.8;
+  }
+}
+
+@keyframes stage-overlay-protected {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  38% {
+    opacity: 1;
+  }
+}
+
+@keyframes stage-overlay-destruction {
+  0%,
+  100% {
+    opacity: 0;
+  }
+  38% {
+    opacity: 1;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .result-flash,
   .flash-success,
@@ -1020,7 +1106,11 @@ h3 {
   .flash-destruction .armor-shape,
   .flash-success .stage-glow,
   .flash-protected .stage-glow,
-  .flash-destruction .stage-glow {
+  .flash-destruction .stage-glow,
+  .flash-success::after,
+  .flash-failure::after,
+  .flash-protected::after,
+  .flash-destruction::after {
     animation: none;
   }
 }

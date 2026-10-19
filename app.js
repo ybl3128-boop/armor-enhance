@@ -1,5 +1,7 @@
-const STORAGE_KEY = "armor-enhance-state-v1";
 const TEST_MODE = new URLSearchParams(window.location.search).get("test") === "1";
+const MAIN_STORAGE_KEY = "armor-enhance-state-v1";
+const TEST_STORAGE_KEY = "armor-enhance-test-state-v1";
+const STORAGE_KEY = TEST_MODE ? TEST_STORAGE_KEY : MAIN_STORAGE_KEY;
 // ============================================
 // FIREBASE 로깅 (CDN firebase-*-compat.js 전역 객체 사용, import 없음)
 // ============================================
@@ -833,6 +835,7 @@ function showResult(title, message, type = "neutral") {
   elements.resultTitle.textContent = title;
   elements.resultMessage.textContent = message;
   elements.resultBox.dataset.type = type;
+  elements.armorStage.dataset.effect = type;
 
   const effectTypes = ["success", "failure", "protected", "destruction"];
   elements.armorStage.classList.remove(
