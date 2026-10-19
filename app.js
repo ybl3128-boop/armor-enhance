@@ -76,7 +76,7 @@ function fbEndSession(summary) {
   );
 }
 
-const INITIAL_GOLD = 10000;
+const INITIAL_GOLD = 100000;
 const INITIAL_PROTECTION_TICKETS = 1;
 const SCRAPS_PER_PROTECTION_TICKET = 25;
 const MAX_LEVEL = 30;
@@ -307,7 +307,7 @@ function resetTestState() {
 
 function applyTestPreset(preset) {
   const presets = {
-    fresh: { gold: 10000, level: 0, scraps: 0, tickets: 1, highest: 0 },
+    fresh: { gold: 100000, level: 0, scraps: 0, tickets: 1, highest: 0 },
     dangerous: { gold: 1000000, level: 15, scraps: 0, tickets: 0, highest: 15 },
     max: { gold: 100000000, level: 29, scraps: 0, tickets: 0, highest: 29 },
     bankrupt: { gold: 0, level: 0, scraps: 0, tickets: 0, highest: 0 }
