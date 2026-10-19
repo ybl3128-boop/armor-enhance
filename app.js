@@ -71,6 +71,7 @@ function fbEndSession(summary) {
 
 const INITIAL_GOLD = 10000;
 const INITIAL_PROTECTION_TICKETS = 1;
+const SCRAPS_PER_PROTECTION_TICKET = 25;
 const MAX_LEVEL = 30;
 
 const PROBABILITIES = [
@@ -85,12 +86,6 @@ const DESTRUCTION_PROBABILITIES = [
   0, 0, 0, 0, 0, 0, 0, 0.0206,
   0.0206, 0.0674, 0.0674, 0.0843, 0.1028, 0.1264, 0.1685, 0.179,
   0.179, 0.179, 0.1853, 0.1895, 0.1937, 0.1979
-];
-
-const RESTORE_OPTIONS = [
-  { level: 3, scraps: 5 },
-  { level: 5, scraps: 12 },
-  { level: 7, scraps: 25 }
 ];
 
 const LEVEL_NAMES = {
@@ -149,9 +144,8 @@ const elements = {
   resultBox: document.querySelector("#result-box"),
   resultTitle: document.querySelector("#result-title"),
   resultMessage: document.querySelector("#result-message"),
-  recoveryBox: document.querySelector("#recovery-box"),
-  recoveryScrapMessage: document.querySelector("#recovery-scrap-message"),
-  recoveryOptions: document.querySelector("#recovery-options"),
+  destructionBox: document.querySelector("#destruction-box"),
+  destructionScrapMessage: document.querySelector("#destruction-scrap-message"),
   newArmorButton: document.querySelector("#new-armor-button"),
   finalSummary: document.querySelector("#final-summary"),
   finalSummaryTitle: document.querySelector("#final-summary-title"),
@@ -218,7 +212,6 @@ function createInitialState() {
     sessionResultType: null,
     bankruptcyAcknowledged: false,
     lastSessionId: null,
-    pendingRecovery: null,
     lastSavedAt: null
   };
 }
@@ -310,17 +303,35 @@ function getScrapsForBreak(level) {
   return Math.max(1, Math.ceil((level + 1) / 2));
 }
 
-function canSellForNextEnhancement(level, cost) {
-  return level > 0 && state.gold + getSellPrice(level) >= cost;
+function convertScrapsToProtectionTickets() {
+  const protectionTicketsBefore = state.protectionTickets;
+  const scrapsBefore = state.scraps;
+  const ticketsGained = Math.floor(
+    scrapsBefore / SCRAPS_PER_PROTECTION_TICKET
+  );
+
+  if (ticketsGained <= 0) {
+    return { scrapsConverted: 0, ticketsGained: 0 };
+  }
+
+  const scrapsConverted = ticketsGained * SCRAPS_PER_PROTECTION_TICKET;
+  state.scraps -= scrapsConverted;
+  state.protectionTickets += ticketsGained;
+
+  logEvent("scrap_to_protection_ticket", {
+    scrapsBefore,
+    scrapsConverted,
+    scrapsAfter: state.scraps,
+    protectionTicketsBefore,
+    protectionTicketsAfter: state.protectionTickets,
+    scrapsPerTicket: SCRAPS_PER_PROTECTION_TICKET
+  });
+
+  return { scrapsConverted, ticketsGained };
 }
 
-function canRestoreAfterBreak() {
-  if (!state.pendingRecovery || state.currentArmor) return false;
-  return RESTORE_OPTIONS.some(
-    (option) =>
-      option.level <= state.pendingRecovery.brokenLevel &&
-      state.scraps >= option.scraps
-  );
+function canSellForNextEnhancement(level, cost) {
+  return level > 0 && state.gold + getSellPrice(level) >= cost;
 }
 
 function getArmorTier(level) {
@@ -374,11 +385,11 @@ function render() {
   elements.highest.textContent = formatLevel(state.highestLevel);
   elements.sessions.textContent = formatNumber(state.sessionCount);
 
-  elements.stageCaption.textContent = hasArmor ? formatLevel(level) : "복구";
+  elements.stageCaption.textContent = hasArmor ? formatLevel(level) : "파괴됨";
   elements.armorName.textContent = hasArmor ? getArmorName(level) : "갑옷 없음";
   elements.armorDescription.textContent = hasArmor
     ? getArmorDescription(level)
-    : "새 갑옷을 받거나 조각으로 갑옷을 복구하세요.";
+    : "새 갑옷을 받아 다시 도전하세요.";
 
   updateArmorVisual(level);
   updateMilestones(state.highestLevel);
@@ -418,7 +429,7 @@ function render() {
       ? "전설 달성"
       : "강화 가능";
 
-  renderRecovery();
+  renderDestruction();
   renderFinalSummary();
 }
 
@@ -494,13 +505,10 @@ function performEnhancement() {
   const cost = getEnhanceCost(level);
   if (state.gold < cost) {
     const canSell = canSellForNextEnhancement(level, cost);
-    const canRestore = canRestoreAfterBreak();
-    if (canSell || canRestore) {
+    if (canSell) {
       showResult(
         "골드가 부족합니다.",
-        canSell
-          ? "현재 갑옷을 판매하면 다음 강화를 진행할 수 있습니다."
-          : "조각으로 갑옷을 복구하면 다시 도전할 수 있습니다.",
+        "현재 갑옷을 판매하면 다음 강화를 진행할 수 있습니다.",
         "failure"
       );
       persistAndRender();
@@ -644,14 +652,15 @@ function performEnhancement() {
     const scrapsGained = getScrapsForBreak(level);
     state.destructionCount += 1;
     state.scraps += scrapsGained;
+    const scrapConversion = convertScrapsToProtectionTickets();
     state.currentArmor = null;
-    state.pendingRecovery = {
-      brokenLevel: level,
-      scrapsGained
-    };
     showResult(
       "강화 실패",
-      `${formatLevel(level)} 갑옷이 파괴되었습니다. 조각 ${scrapsGained}개를 얻었습니다.`,
+      `${formatLevel(level)} 갑옷이 파괴되었습니다. 조각 ${scrapsGained}개를 얻었습니다.${
+        scrapConversion.ticketsGained > 0
+          ? ` 조각 ${scrapConversion.scrapsConverted}개가 파괴 방지권 ${scrapConversion.ticketsGained}장으로 자동 변환되었습니다.`
+          : ""
+      }`,
       "failure"
     );
     logEvent("armor_break", {
@@ -682,7 +691,6 @@ function sellArmor() {
   const goldBefore = state.gold;
   state.gold += price;
   state.currentArmor = { level: 0 };
-  state.pendingRecovery = null;
   elements.protectionCheckbox.checked = false;
   logEvent("sell_armor", {
     level,
@@ -705,7 +713,6 @@ function sellArmor() {
 
 function startNewArmor(reason) {
   state.currentArmor = { level: 0 };
-  state.pendingRecovery = null;
   elements.protectionCheckbox.checked = false;
   logEvent("new_armor_start", {
     reason,
@@ -720,47 +727,13 @@ function startNewArmor(reason) {
   persistAndRender();
 }
 
-function restoreArmor(level, scrapsRequired) {
-  if (!state.pendingRecovery || state.scraps < scrapsRequired) return;
-  state.scraps -= scrapsRequired;
-  state.currentArmor = { level };
-  state.pendingRecovery = null;
-  logEvent("armor_restore", {
-    level,
-    scraps: scrapsRequired,
-    ...getTelemetrySnapshot()
-  });
-  showResult(
-    "갑옷 복구 완료",
-    `${formatLevel(level)} 단계의 갑옷으로 복구했습니다.`,
-    "success"
-  );
-  persistAndRender();
-}
-
-function renderRecovery() {
-  const pending = state.pendingRecovery;
-  const showRecovery = Boolean(pending && !state.currentArmor);
-  elements.recoveryBox.classList.toggle("hidden", !showRecovery);
-  if (!showRecovery) return;
-
-  elements.recoveryScrapMessage.textContent =
-    `보유 조각 ${formatNumber(state.scraps)}개`;
-  elements.recoveryOptions.innerHTML = "";
-
-  RESTORE_OPTIONS
-    .filter((option) => option.level <= pending.brokenLevel)
-    .forEach((option) => {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "recovery-button";
-      button.disabled = state.scraps < option.scraps;
-      button.textContent = `${formatLevel(option.level)} 복구 · ${option.scraps}조각`;
-      button.addEventListener("click", () =>
-        restoreArmor(option.level, option.scraps)
-      );
-      elements.recoveryOptions.append(button);
-    });
+function renderDestruction() {
+  const showDestruction = !state.currentArmor;
+  elements.destructionBox.classList.toggle("hidden", !showDestruction);
+  if (showDestruction) {
+    elements.destructionScrapMessage.textContent =
+      `보유 조각 ${formatNumber(state.scraps)}개`;
+  }
 }
 
 function showResult(title, message, type = "neutral") {

@@ -54,14 +54,13 @@ button:disabled {
 .topbar,
 .panel-heading,
 .goal-banner,
-.recovery-heading {
+.destruction-heading {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 20px;
 }
 
-.eyebrow,
 .section-kicker {
   margin: 0 0 9px;
   color: var(--gold);
@@ -157,8 +156,9 @@ h3 {
 .summary-label {
   display: block;
   margin-bottom: 8px;
-  color: var(--muted);
-  font-size: 0.72rem;
+  color: var(--muted-light);
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 .summary-card strong {
@@ -355,8 +355,9 @@ h3 {
 }
 
 .stat-row span {
-  color: var(--muted);
-  font-size: 0.78rem;
+  color: var(--muted-light);
+  font-size: 0.86rem;
+  font-weight: 500;
 }
 
 .stat-row strong {
@@ -482,7 +483,7 @@ h3 {
 }
 
 .result-box,
-.recovery-box {
+.destruction-box {
   margin-top: 16px;
   border: 1px solid rgba(116, 216, 219, 0.15);
   border-radius: 12px;
@@ -512,7 +513,7 @@ h3 {
   line-height: 1.5;
 }
 
-.recovery-box {
+.destruction-box {
   border-color: rgba(239, 124, 124, 0.27);
   background: rgba(239, 124, 124, 0.06);
   padding: 15px;
@@ -602,49 +603,27 @@ h3 {
   font-size: 0.78rem;
 }
 
-.recovery-heading {
+.destruction-heading {
   align-items: center;
 }
 
-.recovery-heading h3 {
+.destruction-heading h3 {
   margin-bottom: 0;
   color: #ffd2d2;
   font-size: 0.95rem;
 }
 
-.recovery-heading > span {
+.destruction-heading > span {
   color: var(--red);
   font-size: 0.7rem;
   font-weight: 700;
 }
 
-.recovery-copy {
+.destruction-copy {
   margin: 13px 0;
   color: var(--muted);
   font-size: 0.75rem;
   line-height: 1.5;
-}
-
-.recovery-options {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 7px;
-  margin-bottom: 8px;
-}
-
-.recovery-button {
-  min-height: 50px;
-  border: 1px solid rgba(245, 189, 98, 0.28);
-  border-radius: 9px;
-  background: rgba(245, 189, 98, 0.08);
-  color: var(--gold-light);
-  font-size: 0.73rem;
-  font-weight: 800;
-}
-
-.recovery-button:hover:not(:disabled) {
-  border-color: var(--gold);
-  background: rgba(245, 189, 98, 0.15);
 }
 
 .goal-banner {
