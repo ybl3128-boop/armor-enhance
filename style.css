@@ -602,6 +602,46 @@ h3 {
   padding: 14px;
 }
 
+.result-box[data-type="success"] {
+  border-color: rgba(245, 189, 98, 0.5);
+  background: rgba(245, 189, 98, 0.1);
+}
+
+.result-box[data-type="failure"] {
+  border-color: rgba(245, 189, 98, 0.28);
+  background: rgba(245, 189, 98, 0.06);
+}
+
+.result-box[data-type="protected"] {
+  border-color: rgba(116, 216, 219, 0.5);
+  background: rgba(116, 216, 219, 0.1);
+}
+
+.result-box[data-type="destruction"] {
+  border-color: rgba(239, 124, 124, 0.5);
+  background: rgba(239, 124, 124, 0.1);
+}
+
+.result-box[data-type="success"] .result-icon {
+  color: var(--gold-light);
+}
+
+.result-box[data-type="failure"] .result-icon {
+  color: var(--gold);
+}
+
+.result-box[data-type="protected"] .result-icon {
+  color: var(--cyan);
+}
+
+.result-box[data-type="destruction"] .result-icon {
+  color: var(--red);
+}
+
+.result-flash {
+  animation: result-pop 0.52s ease;
+}
+
 .result-icon {
   color: var(--cyan);
   font-size: 1.2rem;
@@ -792,6 +832,53 @@ h3 {
   animation: failure-shake 0.48s ease;
 }
 
+.flash-protected .armor-shape {
+  animation: protection-shield 0.72s ease;
+}
+
+.flash-destruction .armor-shape {
+  animation: destruction-break 0.72s ease;
+}
+
+.flash-success {
+  animation: stage-success-flash 0.7s ease;
+}
+
+.flash-failure {
+  animation: stage-failure-flash 0.48s ease;
+}
+
+.flash-protected {
+  animation: stage-protected-flash 0.72s ease;
+}
+
+.flash-destruction {
+  animation: stage-destruction-flash 0.72s ease;
+}
+
+.flash-success .stage-glow {
+  animation: glow-success 0.7s ease;
+}
+
+.flash-protected .stage-glow {
+  animation: glow-protected 0.72s ease;
+}
+
+.flash-destruction .stage-glow {
+  animation: glow-destruction 0.72s ease;
+}
+
+@keyframes result-pop {
+  0% {
+    transform: translateY(5px);
+    opacity: 0.45;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
 @keyframes success-pulse {
   0%,
   100% {
@@ -812,6 +899,129 @@ h3 {
   }
   75% {
     transform: translateX(8px);
+  }
+}
+
+@keyframes protection-shield {
+  0%,
+  100% {
+    box-shadow: inherit;
+  }
+  38% {
+    box-shadow:
+      0 0 0 10px rgba(116, 216, 219, 0.16),
+      0 0 42px rgba(116, 216, 219, 0.48),
+      inset 10px 10px 0 rgba(255, 255, 255, 0.08),
+      inset -14px -18px 0 rgba(0, 0, 0, 0.18);
+  }
+}
+
+@keyframes destruction-break {
+  0% {
+    filter: none;
+    opacity: 1;
+    transform: scale(1);
+  }
+  42% {
+    filter: saturate(0.65) brightness(1.3);
+    opacity: 1;
+    transform: scale(1.06) rotate(-2deg);
+  }
+  100% {
+    filter: grayscale(0.45);
+    opacity: 0.2;
+    transform: scale(0.72) rotate(1deg);
+  }
+}
+
+@keyframes stage-success-flash {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 rgba(245, 189, 98, 0);
+  }
+  38% {
+    box-shadow: inset 0 0 0 2px rgba(245, 189, 98, 0.62), 0 0 24px rgba(245, 189, 98, 0.16);
+  }
+}
+
+@keyframes stage-failure-flash {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 rgba(245, 189, 98, 0);
+  }
+  35% {
+    box-shadow: inset 0 0 0 2px rgba(245, 189, 98, 0.42);
+  }
+}
+
+@keyframes stage-protected-flash {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 rgba(116, 216, 219, 0);
+  }
+  42% {
+    box-shadow: inset 0 0 0 2px rgba(116, 216, 219, 0.7), 0 0 30px rgba(116, 216, 219, 0.2);
+  }
+}
+
+@keyframes stage-destruction-flash {
+  0%,
+  100% {
+    box-shadow: inset 0 0 0 rgba(239, 124, 124, 0);
+  }
+  40% {
+    box-shadow: inset 0 0 0 2px rgba(239, 124, 124, 0.72), 0 0 28px rgba(239, 124, 124, 0.18);
+  }
+}
+
+@keyframes glow-success {
+  0%,
+  100% {
+    opacity: 0.16;
+    transform: scale(1);
+  }
+  42% {
+    opacity: 0.5;
+    transform: scale(1.3);
+  }
+}
+
+@keyframes glow-protected {
+  0%,
+  100% {
+    opacity: 0.16;
+    transform: scale(1);
+  }
+  42% {
+    opacity: 0.55;
+    transform: scale(1.22);
+  }
+}
+
+@keyframes glow-destruction {
+  0%,
+  100% {
+    background: rgba(116, 216, 219, 0.14);
+  }
+  42% {
+    background: rgba(239, 124, 124, 0.34);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .result-flash,
+  .flash-success,
+  .flash-failure,
+  .flash-protected,
+  .flash-destruction,
+  .flash-success .armor-shape,
+  .flash-failure .armor-shape,
+  .flash-protected .armor-shape,
+  .flash-destruction .armor-shape,
+  .flash-success .stage-glow,
+  .flash-protected .stage-glow,
+  .flash-destruction .stage-glow {
+    animation: none;
   }
 }
 

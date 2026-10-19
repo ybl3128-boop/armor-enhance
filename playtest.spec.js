@@ -23,13 +23,15 @@ test("초기 화면과 기본 강화 흐름", async ({ page }) => {
   await expect(page.locator("#stage-caption")).toHaveText("+1");
   await expect(page.locator("#gold-value")).toHaveText("9,975");
   await expect(page.locator("#result-title")).toHaveText("강화 성공!");
+  await expect(page.locator("#armor-stage")).toHaveClass(/flash-success/);
+  await expect(page.locator("#result-box")).toHaveAttribute("data-type", "success");
 });
 
 test("테스트 모드에서 테스트 수치를 적용", async ({ page }) => {
   await page.goto(`${gameUrl}?test=1`);
 
   await expect(page.locator("#test-panel")).toBeVisible();
-  await expect(page.locator(".test-badge")).toHaveText("Firebase 로그 미전송");
+  await expect(page.locator(".test-badge")).toHaveText("로그가 저장되지 않습니다.");
 
   await page.locator("#test-gold-input").fill("12345");
   await page.locator("#test-level-input").fill("15");
@@ -75,6 +77,8 @@ test("일반 강화 실패는 비용만 소모하고 등급을 유지", async ({
   await expect(page.locator("#armor-name")).toHaveText("낡은 갑옷 +1");
   await expect(page.locator("#destruction-box")).toBeHidden();
   await expect(page.locator("#result-title")).toHaveText("강화 실패");
+  await expect(page.locator("#armor-stage")).toHaveClass(/flash-failure/);
+  await expect(page.locator("#result-box")).toHaveAttribute("data-type", "failure");
 });
 
 test("15강 이후 파괴와 파괴 보호권이 작동", async ({ page }) => {
@@ -94,11 +98,15 @@ test("15강 이후 파괴와 파괴 보호권이 작동", async ({ page }) => {
   await expect(page.locator("#stage-caption")).toHaveText("+15");
   await expect(page.locator("#result-title")).toHaveText("파괴 방지 성공");
   await expect(page.locator("#ticket-value")).toHaveText("0");
+  await expect(page.locator("#armor-stage")).toHaveClass(/flash-protected/);
+  await expect(page.locator("#result-box")).toHaveAttribute("data-type", "protected");
 
   await page.getByRole("button", { name: "강화하기" }).click();
   await expect(page.locator("#armor-name")).toHaveText("갑옷 없음");
   await expect(page.locator("#destruction-box")).toBeVisible();
   await expect(page.locator("#scrap-value")).toHaveText("8");
+  await expect(page.locator("#armor-stage")).toHaveClass(/flash-destruction/);
+  await expect(page.locator("#result-box")).toHaveAttribute("data-type", "destruction");
 
   await page.getByRole("button", { name: "새 +0 갑옷 받기" }).click();
   await expect(page.locator("#armor-name")).toHaveText("낡은 갑옷");

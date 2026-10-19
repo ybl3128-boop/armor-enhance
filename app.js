@@ -725,7 +725,7 @@ function performEnhancement() {
     showResult(
       "파괴 방지 성공",
       `파괴 보호권을 사용해 ${formatLevel(level)} 갑옷을 지켰습니다.`,
-      "failure"
+      "protected"
     );
     logEvent("use_protection", {
       level,
@@ -754,7 +754,7 @@ function performEnhancement() {
           ? ` 조각 ${scrapConversion.scrapsConverted}개가 파괴 방지권 ${scrapConversion.ticketsGained}장으로 자동 변환되었습니다.`
           : ""
       }`,
-      "failure"
+      "destruction"
     );
     logEvent("armor_break", {
       level,
@@ -834,10 +834,18 @@ function showResult(title, message, type = "neutral") {
   elements.resultMessage.textContent = message;
   elements.resultBox.dataset.type = type;
 
-  elements.armorStage.classList.remove("flash-success", "flash-failure");
+  const effectTypes = ["success", "failure", "protected", "destruction"];
+  elements.armorStage.classList.remove(
+    "flash-success",
+    "flash-failure",
+    "flash-protected",
+    "flash-destruction"
+  );
+  elements.resultBox.classList.remove("result-flash");
   void elements.armorStage.offsetWidth;
-  if (type === "success" || type === "failure") {
+  if (effectTypes.includes(type)) {
     elements.armorStage.classList.add(`flash-${type}`);
+    elements.resultBox.classList.add("result-flash");
   }
 }
 
