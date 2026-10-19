@@ -1,5 +1,4 @@
 const STORAGE_KEY = "armor-enhance-state-v1";
-const LOG_STORAGE_KEY = "armor-enhance-logs-v1";
 // ============================================
 // FIREBASE 로깅 (CDN firebase-*-compat.js 전역 객체 사용, import 없음)
 // ============================================
@@ -122,7 +121,6 @@ const numberFormatter = new Intl.NumberFormat("ko-KR");
 const sessionId = createId();
 let state = loadState();
 let hasLoggedSessionEnd = false;
-let cinematicOpen = false;
 
 const elements = {
   gold: document.querySelector("#gold-value"),
@@ -147,11 +145,6 @@ const elements = {
   sellButton: document.querySelector("#sell-button"),
   protectionCheckbox: document.querySelector("#protection-checkbox"),
   protectionOption: document.querySelector("#protection-option"),
-  skipCinematicCheckbox: document.querySelector("#skip-cinematic-checkbox"),
-  cinematicModal: document.querySelector("#enhancement-cinematic"),
-  cinematicTitle: document.querySelector("#cinematic-title"),
-  cinematicMessage: document.querySelector("#cinematic-message"),
-  cinematicConfirmButton: document.querySelector("#cinematic-confirm-button"),
   saveState: document.querySelector("#save-state"),
   resultBox: document.querySelector("#result-box"),
   resultTitle: document.querySelector("#result-title"),
@@ -171,9 +164,6 @@ const elements = {
   finalSessionFailures: document.querySelector("#final-session-failures"),
   finalSummaryModal: document.querySelector("#final-summary-modal"),
   finalSummaryCloseButton: document.querySelector("#final-summary-close-button"),
-  legendaryBanner: document.querySelector("#legendary-banner"),
-  legendaryState: document.querySelector("#legendary-state"),
-  exportLogsButton: document.querySelector("#export-logs-button"),
   resetButton: document.querySelector("#reset-button")
 };
 
@@ -199,16 +189,7 @@ function bindEvents() {
   elements.enhanceButton.addEventListener("click", enhanceArmor);
   elements.sellButton.addEventListener("click", sellArmor);
   elements.newArmorButton.addEventListener("click", () => startNewArmor("break"));
-  elements.exportLogsButton.addEventListener("click", exportLogs);
   elements.resetButton.addEventListener("click", resetData);
-  elements.skipCinematicCheckbox.addEventListener("change", () => {
-    state.skipEnhancementCinematic = elements.skipCinematicCheckbox.checked;
-    persistAndRender();
-  });
-  elements.cinematicConfirmButton.addEventListener("click", () => {
-    closeEnhancementCinematic();
-    performEnhancement();
-  });
   elements.finalSummaryCloseButton.addEventListener("click", closeFinalSummary);
 }
 
@@ -227,14 +208,12 @@ function createInitialState() {
     protectionTickets: INITIAL_PROTECTION_TICKETS,
     scraps: 0,
     highestLevel: 0,
-    legendaryClear: false,
     destructionCount: 0,
     sessionCount: 0,
     sessionMaxGold: INITIAL_GOLD,
     sessionAttempts: 0,
     sessionSuccesses: 0,
     sessionFailures: 0,
-    skipEnhancementCinematic: false,
     finalSummaryOpen: false,
     sessionResultType: null,
     bankruptcyAcknowledged: false,
@@ -272,27 +251,8 @@ function saveState() {
 }
 
 function logEvent(type, payload = {}) {
-  const logs = loadLogs();
-  logs.push({
-    eventId: createId(),
-    type,
-    timestamp: new Date().toISOString(),
-    playerId: state.playerId,
-    sessionId,
-    payload
-  });
-  localStorage.setItem(LOG_STORAGE_KEY, JSON.stringify(logs.slice(-2000)));
-
-  // Firebase에도 비동기 전송 (실패해도 게임 진행에는 영향 없음)
+  // Firebase에 비동기 전송 (실패해도 게임 진행에는 영향 없음)
   fbLogEvent(type, payload);
-}
-
-function loadLogs() {
-  try {
-    return JSON.parse(localStorage.getItem(LOG_STORAGE_KEY)) ?? [];
-  } catch {
-    return [];
-  }
 }
 
 function getCurrentLevel() {
@@ -448,7 +408,6 @@ function render() {
   elements.sellButton.disabled = !hasArmor || sellPrice <= 0;
   elements.protectionCheckbox.disabled =
     !hasArmor || state.protectionTickets <= 0 || isMaxLevel;
-  elements.skipCinematicCheckbox.checked = state.skipEnhancementCinematic;
   elements.protectionOption.classList.toggle(
     "hidden",
     !hasArmor || isMaxLevel
@@ -461,10 +420,6 @@ function render() {
 
   renderRecovery();
   renderFinalSummary();
-  elements.legendaryState.textContent = state.legendaryClear
-    ? "달성 완료"
-    : `최고 기록 ${formatLevel(state.highestLevel)}`;
-  elements.legendaryState.classList.toggle("completed", state.legendaryClear);
 }
 
 function renderFinalSummary() {
@@ -529,32 +484,7 @@ function updateMilestones(highestLevel) {
 }
 
 function enhanceArmor() {
-  const level = getCurrentLevel();
-  if (
-    level !== null &&
-    level >= 17 &&
-    !state.skipEnhancementCinematic &&
-    !cinematicOpen
-  ) {
-    openEnhancementCinematic(level);
-    return;
-  }
   performEnhancement();
-}
-
-function openEnhancementCinematic(level) {
-  cinematicOpen = true;
-  elements.cinematicTitle.textContent =
-    `${formatLevel(level)} 강화에 도전하고 있습니다!`;
-  elements.cinematicMessage.innerHTML =
-    "이제부터는 엄청난 강화 구간입니다.<br />대장장이의 집중력을 보여주세요.";
-  elements.cinematicModal.classList.remove("hidden");
-  elements.cinematicConfirmButton.focus();
-}
-
-function closeEnhancementCinematic() {
-  cinematicOpen = false;
-  elements.cinematicModal.classList.add("hidden");
 }
 
 function performEnhancement() {
@@ -642,7 +572,6 @@ function performEnhancement() {
     state.currentArmor.level = nextLevel;
     state.highestLevel = Math.max(state.highestLevel, nextLevel);
     if (nextLevel === MAX_LEVEL) {
-      state.legendaryClear = getCurrentLevel() >= 30;
       state.finalSummaryOpen = true;
       state.sessionResultType = "legendary";
       logEvent("legendary_clear", {
@@ -851,31 +780,13 @@ function persistAndRender() {
   render();
 }
 
-function exportLogs() {
-  const logs = loadLogs();
-  const blob = new Blob([JSON.stringify(logs, null, 2)], {
-    type: "application/json"
-  });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  const exportTimestamp = new Date()
-    .toISOString()
-    .replace("T", "_")
-    .replace(/[:.]/g, "-");
-  link.download = `armor-enhance-logs-${exportTimestamp}-${sessionId}.json`;
-  link.click();
-  URL.revokeObjectURL(url);
-}
-
 function resetData() {
   const confirmed = window.confirm(
-    "저장된 게임 데이터와 로그를 모두 삭제하고 처음부터 시작할까요?"
+    "저장된 게임 데이터를 모두 삭제하고 처음부터 시작할까요?"
   );
   if (!confirmed) return;
   hasLoggedSessionEnd = true;
   localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(LOG_STORAGE_KEY);
   window.location.reload();
 }
 

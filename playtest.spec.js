@@ -115,48 +115,28 @@ test("조각으로 갑옷을 복구하고 새로고침 후 상태를 유지", as
   await expect(page.locator("#armor-name")).toHaveText("보강된 갑옷");
 });
 
-test("+20 달성 결과를 표시하고 기록을 유지", async ({ page }) => {
+test("+30 달성 결과를 표시하고 기록을 유지", async ({ page }) => {
   await page.addInitScript(() => {
     const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
-    state.gold = 1000000;
-    state.currentArmor = { level: 19 };
+    state.gold = 100000000;
+    state.currentArmor = { level: 29 };
     state.pendingRecovery = null;
     localStorage.setItem("armor-enhance-state-v1", JSON.stringify(state));
   });
   await page.reload();
 
   await page.getByRole("button", { name: "강화하기" }).click();
-  await expect(page.locator("#enhancement-cinematic")).toBeVisible();
-  await page.getByRole("button", { name: "강화 결과 확인" }).click();
 
   await expect(page.locator("#result-title")).toHaveText("전설의 갑옷 완성!");
-  await expect(page.locator("#legendary-state")).toHaveText("달성 완료");
-  await expect(page.locator("#stage-caption")).toHaveText("+20");
+  await expect(page.locator("#stage-caption")).toHaveText("+30");
   await expect(page.locator("#final-summary-modal")).toBeVisible();
   await expect(page.locator("#final-summary")).toBeVisible();
-  await expect(page.locator("#final-max-level")).toHaveText("+20");
+  await expect(page.locator("#final-max-level")).toHaveText("+30");
   await expect(page.locator("#final-session-attempts")).toHaveText("1회");
   await expect(page.locator("#final-session-successes")).toHaveText("1회");
   await expect(page.locator("#final-session-failures")).toHaveText("0회");
   await page.getByRole("button", { name: "계속 플레이" }).click();
   await expect(page.locator("#final-summary-modal")).toBeHidden();
-});
-
-test("+17 강화 연출 스킵 설정", async ({ page }) => {
-  await page.addInitScript(() => {
-    const state = JSON.parse(localStorage.getItem("armor-enhance-state-v1"));
-    state.gold = 1000000;
-    state.currentArmor = { level: 17 };
-    state.pendingRecovery = null;
-    localStorage.setItem("armor-enhance-state-v1", JSON.stringify(state));
-  });
-  await page.reload();
-
-  await page.getByLabel(/\+17 강화 연출 건너뛰기/).check();
-  await page.getByRole("button", { name: "강화하기" }).click();
-
-  await expect(page.locator("#enhancement-cinematic")).toBeHidden();
-  await expect(page.locator("#stage-caption")).toHaveText("+18");
 });
 
 test("골드 부족 시 세션 결과 팝업 표시", async ({ page }) => {
