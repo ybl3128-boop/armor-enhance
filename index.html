@@ -55,6 +55,61 @@
         </article>
       </section>
 
+      <section class="test-panel hidden" id="test-panel" aria-labelledby="test-heading">
+        <div class="test-panel-heading">
+          <div>
+            <p class="section-kicker">DEVELOPER MODE</p>
+            <h2 id="test-heading">테스트 모드</h2>
+          </div>
+          <span class="test-badge">Firebase 로그 미전송</span>
+        </div>
+        <p class="test-description">
+          테스트용 수치 조정 화면입니다. 이 모드에서는 게임 로그를 Firebase로 전송하지 않습니다.
+        </p>
+        <div class="test-controls">
+          <label>
+            <span>골드</span>
+            <input id="test-gold-input" type="number" min="0" max="1000000000" step="1" />
+          </label>
+          <label>
+            <span>현재 강화 단계</span>
+            <input id="test-level-input" type="number" min="0" max="30" step="1" />
+          </label>
+          <label>
+            <span>갑옷 조각</span>
+            <input id="test-scraps-input" type="number" min="0" max="1000000" step="1" />
+          </label>
+          <label>
+            <span>파괴 방지권</span>
+            <input id="test-tickets-input" type="number" min="0" max="1000000" step="1" />
+          </label>
+          <label>
+            <span>최고 기록</span>
+            <input id="test-highest-input" type="number" min="0" max="30" step="1" />
+          </label>
+          <label>
+            <span>강화 결과 강제</span>
+            <select id="test-outcome-select">
+              <option value="random">일반 확률</option>
+              <option value="success">성공</option>
+              <option value="failure">실패 유지</option>
+              <option value="destruction">파괴</option>
+            </select>
+          </label>
+        </div>
+        <div class="test-actions">
+          <button class="primary-button" id="test-apply-button" type="button">수치 적용</button>
+          <button class="secondary-button" id="test-reset-button" type="button">테스트 데이터 초기화</button>
+        </div>
+        <div class="test-presets" aria-label="테스트 모드 프리셋">
+          <span>프리셋</span>
+          <button type="button" data-test-preset="fresh">처음 상태</button>
+          <button type="button" data-test-preset="dangerous">위험 구간</button>
+          <button type="button" data-test-preset="max">+29 테스트</button>
+          <button type="button" data-test-preset="bankrupt">파산 상태</button>
+        </div>
+      </section>
+
       <main class="game-layout">
         <section class="panel armor-panel" aria-labelledby="armor-heading">
           <div class="panel-heading">

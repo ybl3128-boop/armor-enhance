@@ -25,6 +25,25 @@ test("초기 화면과 기본 강화 흐름", async ({ page }) => {
   await expect(page.locator("#result-title")).toHaveText("강화 성공!");
 });
 
+test("테스트 모드에서 테스트 수치를 적용", async ({ page }) => {
+  await page.goto(`${gameUrl}?test=1`);
+
+  await expect(page.locator("#test-panel")).toBeVisible();
+  await expect(page.locator(".test-badge")).toHaveText("Firebase 로그 미전송");
+
+  await page.locator("#test-gold-input").fill("12345");
+  await page.locator("#test-level-input").fill("15");
+  await page.locator("#test-scraps-input").fill("8");
+  await page.locator("#test-tickets-input").fill("2");
+  await page.locator("#test-highest-input").fill("15");
+  await page.getByRole("button", { name: "수치 적용" }).click();
+
+  await expect(page.locator("#gold-value")).toHaveText("12,345");
+  await expect(page.locator("#stage-caption")).toHaveText("+15");
+  await expect(page.locator("#scrap-value")).toHaveText("8");
+  await expect(page.locator("#ticket-value")).toHaveText("2");
+});
+
 test("낮은 단계 판매로 골드가 복사되지 않음", async ({ page }) => {
   await page.getByRole("button", { name: "강화하기" }).click();
   await page.getByRole("button", { name: "판매하기" }).click();
@@ -181,23 +200,4 @@ test("데이터 초기화 후 처음 상태로 돌아감", async ({ page }) => {
   await expect(page.locator("#gold-value")).toHaveText("10,000");
   await expect(page.locator("#scrap-value")).toHaveText("0");
   await expect(page.locator("#highest-level-value")).toHaveText("+0");
-});
-
-test("로그에 익명 플레이어 ID와 전후 상태가 기록됨", async ({ page }) => {
-  await page.getByRole("button", { name: "강화하기" }).click();
-
-  const logData = await page.evaluate(() => {
-    const logs = JSON.parse(localStorage.getItem("armor-enhance-logs-v1"));
-    return {
-      session: logs.find((event) => event.type === "session_start"),
-      attempt: logs.find((event) => event.type === "reinforce_attempt"),
-      result: logs.find((event) => event.type === "reinforce_result")
-    };
-  });
-
-  expect(logData.session.playerId).toBeTruthy();
-  expect(logData.attempt.playerId).toBe(logData.session.playerId);
-  expect(logData.attempt.payload.goldBefore).toBe(10000);
-  expect(logData.result.payload.goldAfter).toBe(9975);
-  expect(logData.result.payload.currentLevelAfter).toBe(1);
 });

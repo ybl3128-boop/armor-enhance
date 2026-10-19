@@ -172,6 +172,112 @@ h3 {
   font-size: 0.72rem;
 }
 
+.test-panel {
+  margin-bottom: 14px;
+  padding: 18px 20px;
+  border: 1px solid rgba(245, 189, 98, 0.38);
+  border-radius: 16px;
+  background: linear-gradient(145deg, rgba(55, 43, 30, 0.92), rgba(22, 26, 32, 0.96));
+  box-shadow: var(--shadow);
+}
+
+.test-panel-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.test-panel-heading h2 {
+  color: var(--gold-light);
+}
+
+.test-badge {
+  border: 1px solid rgba(131, 219, 155, 0.36);
+  border-radius: 999px;
+  background: rgba(131, 219, 155, 0.1);
+  color: var(--green);
+  padding: 7px 10px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.test-description {
+  margin: 12px 0 16px;
+  color: var(--muted-light);
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
+.test-controls {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.test-controls label {
+  display: grid;
+  gap: 5px;
+  color: var(--muted-light);
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+.test-controls input,
+.test-controls select {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid rgba(180, 198, 220, 0.24);
+  border-radius: 8px;
+  background: rgba(8, 11, 16, 0.55);
+  color: var(--text);
+  padding: 8px 9px;
+  font-size: 0.82rem;
+}
+
+.test-controls input:focus,
+.test-controls select:focus {
+  outline: 2px solid rgba(245, 189, 98, 0.5);
+  outline-offset: 1px;
+}
+
+.test-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.test-actions button {
+  min-height: 38px;
+  padding: 8px 13px;
+  font-size: 0.78rem;
+}
+
+.test-presets {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 12px;
+  color: var(--muted-light);
+  font-size: 0.72rem;
+}
+
+.test-presets button {
+  border: 1px solid rgba(180, 198, 220, 0.24);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted-light);
+  padding: 6px 9px;
+  font-size: 0.7rem;
+}
+
+.test-presets button:hover {
+  border-color: var(--gold);
+  color: var(--gold-light);
+}
+
 .game-layout {
   display: grid;
   grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
@@ -737,8 +843,22 @@ h3 {
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .test-controls {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .summary-card:last-child {
     grid-column: span 2;
+  }
+
+  .test-panel-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .test-controls {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .panel {

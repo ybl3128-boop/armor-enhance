@@ -1,10 +1,15 @@
 const STORAGE_KEY = "armor-enhance-state-v1";
+const TEST_MODE = new URLSearchParams(window.location.search).get("test") === "1";
 // ============================================
 // FIREBASE 로깅 (CDN firebase-*-compat.js 전역 객체 사용, import 없음)
 // ============================================
 let fbDb = null;
 
 function initFirebaseLogging() {
+  if (TEST_MODE) {
+    console.info("테스트 모드: Firebase 로그를 전송하지 않습니다.");
+    return;
+  }
   if (typeof firebase === "undefined") {
     console.warn("⚠️ Firebase SDK가 로드되지 않았습니다.");
     return;
@@ -33,7 +38,7 @@ function fbSafeCall(promise) {
 }
 
 function fbLogEvent(eventType, payload) {
-  if (!fbDb) return;
+  if (!fbDb || TEST_MODE) return;
   fbSafeCall(
     fbDb.collection("events").add({
       sessionId,
@@ -46,7 +51,7 @@ function fbLogEvent(eventType, payload) {
 }
 
 function fbStartSession() {
-  if (!fbDb) return;
+  if (!fbDb || TEST_MODE) return;
   fbSafeCall(
     fbDb.collection("sessions").doc(sessionId).set({
       playerId: state?.playerId ?? "unknown",
@@ -57,7 +62,7 @@ function fbStartSession() {
 }
 
 function fbEndSession(summary) {
-  if (!fbDb) return;
+  if (!fbDb || TEST_MODE) return;
   fbSafeCall(
     fbDb.collection("sessions").doc(sessionId).set(
       {
@@ -158,6 +163,15 @@ const elements = {
   finalSessionFailures: document.querySelector("#final-session-failures"),
   finalSummaryModal: document.querySelector("#final-summary-modal"),
   finalSummaryCloseButton: document.querySelector("#final-summary-close-button"),
+  testPanel: document.querySelector("#test-panel"),
+  testGoldInput: document.querySelector("#test-gold-input"),
+  testLevelInput: document.querySelector("#test-level-input"),
+  testScrapsInput: document.querySelector("#test-scraps-input"),
+  testTicketsInput: document.querySelector("#test-tickets-input"),
+  testHighestInput: document.querySelector("#test-highest-input"),
+  testOutcomeSelect: document.querySelector("#test-outcome-select"),
+  testApplyButton: document.querySelector("#test-apply-button"),
+  testResetButton: document.querySelector("#test-reset-button"),
   resetButton: document.querySelector("#reset-button")
 };
 
@@ -185,6 +199,13 @@ function bindEvents() {
   elements.newArmorButton.addEventListener("click", () => startNewArmor("break"));
   elements.resetButton.addEventListener("click", resetData);
   elements.finalSummaryCloseButton.addEventListener("click", closeFinalSummary);
+  if (TEST_MODE) {
+    elements.testApplyButton.addEventListener("click", applyTestState);
+    elements.testResetButton.addEventListener("click", resetTestState);
+    document.querySelectorAll("[data-test-preset]").forEach((button) => {
+      button.addEventListener("click", () => applyTestPreset(button.dataset.testPreset));
+    });
+  }
 }
 
 function createId() {
@@ -244,8 +265,71 @@ function saveState() {
 }
 
 function logEvent(type, payload = {}) {
+  if (TEST_MODE) return;
   // Firebase에 비동기 전송 (실패해도 게임 진행에는 영향 없음)
   fbLogEvent(type, payload);
+}
+
+function getTestNumber(input, minimum, maximum) {
+  const value = Number(input.value);
+  if (!Number.isFinite(value)) return minimum;
+  return Math.min(maximum, Math.max(minimum, Math.floor(value)));
+}
+
+function applyTestState() {
+  if (!TEST_MODE) return;
+
+  const level = getTestNumber(elements.testLevelInput, 0, MAX_LEVEL);
+  const highestLevel = getTestNumber(elements.testHighestInput, 0, MAX_LEVEL);
+  state.gold = getTestNumber(elements.testGoldInput, 0, 1_000_000_000);
+  state.currentArmor = { level };
+  state.scraps = getTestNumber(elements.testScrapsInput, 0, 1_000_000);
+  state.protectionTickets = getTestNumber(
+    elements.testTicketsInput,
+    0,
+    1_000_000
+  );
+  state.highestLevel = Math.max(highestLevel, level);
+  state.finalSummaryOpen = false;
+  state.sessionResultType = null;
+  state.bankruptcyAcknowledged = false;
+  persistAndRender();
+  showResult("테스트 모드 적용", "테스트용 게임 수치를 적용했습니다.", "success");
+}
+
+function resetTestState() {
+  if (!TEST_MODE) return;
+  localStorage.removeItem(STORAGE_KEY);
+  window.location.reload();
+}
+
+function applyTestPreset(preset) {
+  const presets = {
+    fresh: { gold: 10000, level: 0, scraps: 0, tickets: 1, highest: 0 },
+    dangerous: { gold: 1000000, level: 15, scraps: 0, tickets: 0, highest: 15 },
+    max: { gold: 100000000, level: 29, scraps: 0, tickets: 0, highest: 29 },
+    bankrupt: { gold: 0, level: 0, scraps: 0, tickets: 0, highest: 0 }
+  };
+  const presetState = presets[preset];
+  if (!presetState) return;
+
+  elements.testGoldInput.value = presetState.gold;
+  elements.testLevelInput.value = presetState.level;
+  elements.testScrapsInput.value = presetState.scraps;
+  elements.testTicketsInput.value = presetState.tickets;
+  elements.testHighestInput.value = presetState.highest;
+  applyTestState();
+}
+
+function renderTestControls() {
+  elements.testPanel.classList.toggle("hidden", !TEST_MODE);
+  if (!TEST_MODE) return;
+
+  elements.testGoldInput.value = state.gold;
+  elements.testLevelInput.value = getCurrentLevel() ?? 0;
+  elements.testScrapsInput.value = state.scraps;
+  elements.testTicketsInput.value = state.protectionTickets;
+  elements.testHighestInput.value = state.highestLevel;
 }
 
 function getCurrentLevel() {
@@ -370,6 +454,7 @@ function formatTime(isoDate) {
 }
 
 function render() {
+  renderTestControls();
   const level = getCurrentLevel();
   const hasArmor = level !== null;
   const isMaxLevel = level === MAX_LEVEL;
@@ -565,10 +650,18 @@ function performEnhancement() {
 
   state.gold -= cost;
   state.sessionAttempts += 1;
+  const forcedOutcome = TEST_MODE
+    ? elements.testOutcomeSelect.value
+    : "random";
   const roll = Math.random();
-  const success = roll < rates.success;
+  const success =
+    forcedOutcome === "success" ||
+    (forcedOutcome === "random" && roll < rates.success);
   const destruction =
-    !success && roll < rates.success + rates.destruction;
+    forcedOutcome === "destruction" ||
+    (forcedOutcome === "random" &&
+      !success &&
+      roll < rates.success + rates.destruction);
   if (success) {
     state.sessionSuccesses += 1;
   } else {
