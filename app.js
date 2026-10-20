@@ -617,15 +617,11 @@ function performEnhancement() {
     state.sessionResultType = "bankruptcy";
     state.finalSummaryOpen = true;
     state.bankruptcyAcknowledged = false;
-    logEvent("bankruptcy_blocked", {
+    logEvent("bankruptcy", {
+      reason: "insufficient_gold",
       level,
       cost,
       goldBefore: state.gold,
-      scrapsBefore: state.scraps
-    });
-    logEvent("session_bankruptcy", {
-      level,
-      cost,
       ...getTelemetrySnapshot()
     });
     persistAndRender();
@@ -640,16 +636,6 @@ function performEnhancement() {
   const scrapsBefore = state.scraps;
   const protectionTicketsBefore = state.protectionTickets;
 
-  logEvent("probability_view", {
-    level,
-    successProbability: rates.success,
-    failureProbability: rates.failure,
-    destructionProbability: rates.destruction,
-    cost,
-    goldBefore,
-    scrapsBefore,
-    protectionTicketsBefore
-  });
   logEvent("reinforce_attempt", {
     level,
     cost,
@@ -803,11 +789,7 @@ function sellArmor() {
     level,
     price,
     goldBefore,
-    ...getTelemetrySnapshot()
-  });
-  logEvent("new_armor_start", {
-    reason: "sell",
-    level: 0,
+    newArmorLevel: 0,
     ...getTelemetrySnapshot()
   });
   showResult(
