@@ -871,7 +871,7 @@ h3 {
 }
 
 .flash-failure::after {
-  background: radial-gradient(circle at center, rgba(239, 124, 124, 0.46), transparent 60%);
+  background: radial-gradient(circle at center, rgba(239, 124, 124, 0.42), transparent 56%);
   animation: stage-overlay-failure 0.8s ease;
 }
 
@@ -1063,9 +1063,9 @@ h3 {
     transform: scale(1);
   }
   42% {
-    background: rgba(239, 82, 82, 0.58);
-    opacity: 0.82;
-    transform: scale(1.35);
+    background: rgba(239, 82, 82, 0.52);
+    opacity: 0.72;
+    transform: scale(1.24);
   }
 }
 
