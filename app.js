@@ -455,6 +455,10 @@ function formatTime(isoDate) {
   });
 }
 
+function getArmorAssetPath(level) {
+  return `./assets/armor/armor-level-${String(level).padStart(2, "0")}.png`;
+}
+
 function render() {
   renderTestControls();
   const level = getCurrentLevel();
@@ -569,19 +573,19 @@ function updateArmorVisual(level) {
   if (level === null) {
     elements.armorShape.style.opacity = "0.2";
     elements.armorShape.style.transform = "scale(0.72)";
+    elements.armorShape.removeAttribute("src");
+    elements.armorShape.alt = "파괴된 갑옷";
     elements.stageGlow.style.opacity = "0.05";
     return;
   }
 
   const hue = Math.min(210 + level * 8, 350);
-  const saturation = Math.min(24 + level * 4, 90);
-  const lightness = Math.max(66 - level * 2.2, 33);
+  elements.armorShape.src = getArmorAssetPath(level);
+  elements.armorShape.alt = `현재 갑옷: ${getArmorName(level)} ${formatLevel(level)}`;
   elements.armorShape.style.opacity = "1";
   elements.armorShape.style.transform = `scale(${1 + level * 0.008})`;
-  elements.armorShape.style.background =
-    `linear-gradient(145deg, hsl(${hue} ${saturation}% ${Math.min(lightness + 15, 88)}%), hsl(${hue} ${saturation}% ${lightness}%))`;
   elements.armorShape.style.boxShadow =
-    `inset 10px 10px 0 rgba(255,255,255,.08), inset -14px -18px 0 rgba(0,0,0,.18), 0 0 ${35 + level * 4}px hsla(${hue}, 80%, 65%, .22)`;
+    `0 0 ${35 + level * 4}px hsla(${hue}, 80%, 65%, .22)`;
   elements.stageGlow.style.opacity = `${0.16 + level * 0.02}`;
   elements.stageGlow.style.background = `hsla(${hue}, 80%, 65%, .18)`;
 }

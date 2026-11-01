@@ -350,35 +350,13 @@ h3 {
 .armor-shape {
   position: relative;
   z-index: 1;
-  width: clamp(125px, 34%, 190px);
-  aspect-ratio: 0.78;
-  border: 9px solid rgba(255, 255, 255, 0.2);
-  border-radius: 25% 25% 18% 18%;
-  background: linear-gradient(145deg, #a6b2c0, #4b5664);
-  box-shadow:
-    inset 10px 10px 0 rgba(255, 255, 255, 0.08),
-    inset -14px -18px 0 rgba(0, 0, 0, 0.18),
-    0 0 60px rgba(116, 216, 219, 0.17);
+  display: block;
+  width: min(70%, 280px);
+  height: auto;
+  max-height: 290px;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 20px rgba(0, 0, 0, 0.36));
   transition: 0.45s ease;
-}
-
-.armor-shape::before,
-.armor-shape::after {
-  position: absolute;
-  left: 14%;
-  width: 72%;
-  height: 8px;
-  border-radius: 99px;
-  background: rgba(255, 255, 255, 0.18);
-  content: "";
-}
-
-.armor-shape::before {
-  top: 28%;
-}
-
-.armor-shape::after {
-  top: 52%;
 }
 
 .stage-glow {
