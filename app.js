@@ -381,7 +381,9 @@ function getSellPrice(level) {
         ? 0.8
         : level === 4
           ? 0.9
-          : 1.35 + (level - 5) * 0.15;
+          : level < 10
+            ? 1.35 + (level - 5) * 0.15
+            : 2.0; // Lv 10+ 판매가 200%
   return Math.floor(getTotalInvestment(level) * saleMultiplier);
 }
 
