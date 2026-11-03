@@ -241,14 +241,24 @@ function startAutoEnhance() {
   if (autoEnhanceTimer !== null) return;
   if (!canAutoEnhance()) return;
   elements.enhanceButton.classList.add("auto-enhancing");
+  triggerEnhanceTick();
   performEnhancement();
   autoEnhanceTimer = window.setInterval(() => {
     if (!canAutoEnhance()) {
       stopAutoEnhance();
       return;
     }
+    triggerEnhanceTick();
     performEnhancement();
   }, AUTO_ENHANCE_INTERVAL_MS);
+}
+
+function triggerEnhanceTick() {
+  // 실제 강화가 발생하는 순간에만 짧게 플래시 (버튼 애니메이션과 실제 강화 타이밍 동기화)
+  elements.enhanceButton.classList.remove("auto-enhance-tick");
+  // eslint-disable-next-line no-unused-expressions
+  elements.enhanceButton.offsetWidth; // 강제 리플로우로 애니메이션 재시작
+  elements.enhanceButton.classList.add("auto-enhance-tick");
 }
 
 function stopAutoEnhance() {
@@ -257,6 +267,7 @@ function stopAutoEnhance() {
     autoEnhanceTimer = null;
   }
   elements.enhanceButton.classList.remove("auto-enhancing");
+  elements.enhanceButton.classList.remove("auto-enhance-tick");
 }
 
 function bindAutoEnhanceHotkey() {

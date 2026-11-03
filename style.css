@@ -562,13 +562,18 @@ h3 {
 }
 
 .primary-button.auto-enhancing {
-  animation: auto-enhance-pulse 0.3s ease-in-out infinite;
   box-shadow: 0 0 0 3px rgba(247, 201, 114, 0.5), 0 16px 30px rgba(217, 145, 54, 0.4);
 }
 
-@keyframes auto-enhance-pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.03); }
+/* 실제 강화 시도가 발생하는 순간에만 1회 재생되는 짧은 플래시 (타이밍 동기화) */
+.primary-button.auto-enhance-tick {
+  animation: auto-enhance-tick 0.18s ease-out;
+}
+
+@keyframes auto-enhance-tick {
+  0% { transform: scale(0.95); }
+  40% { transform: scale(1.05); }
+  100% { transform: scale(1); }
 }
 
 .secondary-button {
