@@ -49,6 +49,7 @@ button:disabled {
   width: min(1120px, calc(100% - 32px));
   margin: 0 auto;
   padding: 44px 0 28px;
+  zoom: 0.9;
 }
 
 .topbar,
