@@ -462,7 +462,7 @@ function formatTime(isoDate) {
 }
 
 function getArmorAssetPath(level) {
-  return `./assets/armor/armor-level-${String(level).padStart(2, "0")}.png`;
+  return `./assets/armor/${level}.png`;
 }
 
 function render() {
