@@ -316,6 +316,120 @@ h3 {
   padding: 0;
 }
 
+.action-heading-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.help-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid rgba(180, 198, 220, 0.3);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted-light);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+  padding: 0;
+  transition: 0.2s ease;
+}
+
+.help-button:hover {
+  border-color: var(--gold);
+  color: var(--gold-light);
+  background: rgba(245, 189, 98, 0.1);
+}
+
+.help-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 22;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(4, 7, 11, 0.84);
+  backdrop-filter: blur(8px);
+}
+
+.help-panel {
+  width: min(460px, 100%);
+  border: 1px solid rgba(116, 216, 219, 0.3);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 90% 0%, rgba(116, 216, 219, 0.12), transparent 13rem),
+    var(--panel-light);
+  padding: 20px;
+}
+
+.help-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.help-heading h3 {
+  margin: 0;
+  color: var(--cyan);
+  font-size: 1rem;
+}
+
+.help-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid rgba(180, 198, 220, 0.3);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--muted-light);
+  font-size: 0.72rem;
+  padding: 0;
+  transition: 0.2s ease;
+}
+
+.help-close:hover {
+  border-color: var(--red);
+  color: var(--red);
+}
+
+.help-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.help-list li {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  padding: 12px 14px;
+}
+
+.help-list strong {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text);
+  font-size: 0.86rem;
+}
+
+.help-list p {
+  margin: 0;
+  color: var(--muted-light);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
 .armor-stage {
   position: relative;
   display: grid;

@@ -174,7 +174,10 @@
               <p class="section-kicker">ENCHANTMENT</p>
               <h2 id="action-heading">강화 작업</h2>
             </div>
-            <span class="save-state" id="save-state">자동 저장됨</span>
+            <div class="action-heading-right">
+              <button class="help-button" id="help-button" type="button" aria-label="도움말 보기">?</button>
+              <span class="save-state" id="save-state">자동 저장됨</span>
+            </div>
           </div>
 
           <div class="stats-grid">
@@ -254,6 +257,29 @@
       <footer class="footer-note">
         레벨별 갑옷 이미지와 강화 결과 효과로 성장 과정을 보여줍니다. 모든 게임 상태는 이 브라우저에 자동 저장됩니다.
       </footer>
+    </div>
+
+    <div class="help-modal hidden" id="help-modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <div class="help-panel" id="help-panel">
+        <div class="help-heading">
+          <h3 id="help-title">💡 플레이 도움말</h3>
+          <button class="help-close" id="help-close-button" type="button" aria-label="닫기">✕</button>
+        </div>
+        <ul class="help-list">
+          <li>
+            <strong>💰 골드 벌기</strong>
+            <p>강화하기로 단계를 올리거나, 판매하기로 현재 갑옷을 팔아 골드를 벌 수 있습니다. 강화 비용이 부족할 때는 판매해서 자금을 마련하세요.</p>
+          </li>
+          <li>
+            <strong>🧩 조각 모으기</strong>
+            <p>갑옷이 파괴되면 조각을 얻습니다. 조각 25개를 모으면 자동으로 파괴 방지권 1개로 전환되어 다음 강화 실패를 막아줍니다.</p>
+          </li>
+          <li>
+            <strong>⌨️ 스페이스바 자동 강화</strong>
+            <p>스페이스바를 누르고 있으면 초당 약 2회씩 자동으로 강화를 시도합니다. 원하는 타이밍에 손을 떼면 바로 멈춥니다.</p>
+          </li>
+        </ul>
+      </div>
     </div>
 
     <div class="final-summary-modal hidden" id="final-summary-modal" role="dialog" aria-modal="true" aria-labelledby="final-summary-title">

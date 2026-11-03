@@ -178,7 +178,10 @@ const elements = {
   testOutcomeSelect: document.querySelector("#test-outcome-select"),
   testApplyButton: document.querySelector("#test-apply-button"),
   testResetButton: document.querySelector("#test-reset-button"),
-  resetButton: document.querySelector("#reset-button")
+  resetButton: document.querySelector("#reset-button"),
+  helpButton: document.querySelector("#help-button"),
+  helpModal: document.querySelector("#help-modal"),
+  helpCloseButton: document.querySelector("#help-close-button")
 };
 
 state.sessionCount += 1;
@@ -205,6 +208,11 @@ function bindEvents() {
   elements.newArmorButton.addEventListener("click", () => startNewArmor("break"));
   elements.resetButton.addEventListener("click", resetData);
   elements.finalSummaryCloseButton.addEventListener("click", closeFinalSummary);
+  elements.helpButton.addEventListener("click", openHelpModal);
+  elements.helpCloseButton.addEventListener("click", closeHelpModal);
+  elements.helpModal.addEventListener("click", (event) => {
+    if (event.target === elements.helpModal) closeHelpModal();
+  });
   if (TEST_MODE) {
     elements.testApplyButton.addEventListener("click", applyTestState);
     elements.testResetButton.addEventListener("click", resetTestState);
@@ -655,6 +663,14 @@ function closeFinalSummary() {
   state.finalSummaryOpen = false;
   state.bankruptcyAcknowledged = true;
   persistAndRender();
+}
+
+function openHelpModal() {
+  elements.helpModal.classList.remove("hidden");
+}
+
+function closeHelpModal() {
+  elements.helpModal.classList.add("hidden");
 }
 
 function updateArmorVisual(level) {
