@@ -375,6 +375,8 @@ function getTotalInvestment(level) {
   return total;
 }
 
+const SELL_EXPONENTIAL_GROWTH = 1.2; // Lv 13+ 판매 배율 성장률 (매 레벨 20%씩 증가)
+
 function getSellPrice(level) {
   if (level <= 0) return 0;
   const saleMultiplier = level === 1
@@ -387,7 +389,9 @@ function getSellPrice(level) {
           ? 0.9
           : level < 10
             ? 1.35 + (level - 5) * 0.15
-            : 4.0; // Lv 10+ 판매가 400% (스트레스 완화)
+            : level < 13
+              ? 4.0 // Lv 10~12는 400% 고정
+              : 4.0 * Math.pow(SELL_EXPONENTIAL_GROWTH, level - 13); // Lv 13+ 기하급수적 증가
   return Math.floor(getTotalInvestment(level) * saleMultiplier);
 }
 
