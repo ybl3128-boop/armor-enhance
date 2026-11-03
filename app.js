@@ -212,6 +212,73 @@ function bindEvents() {
       button.addEventListener("click", () => applyTestPreset(button.dataset.testPreset));
     });
   }
+  bindAutoEnhanceHotkey();
+}
+
+// ============================================
+// 스페이스바 홀드 자동 강화
+// ============================================
+const AUTO_ENHANCE_INTERVAL_MS = 500; // 초당 약 2회로 제한 (원하는 타이밍에 멈추기 쉽게)
+let autoEnhanceTimer = null;
+let spaceKeyHeld = false;
+
+function isTypingTarget(target) {
+  if (!target) return false;
+  const tag = target.tagName;
+  return (
+    tag === "INPUT" ||
+    tag === "TEXTAREA" ||
+    tag === "SELECT" ||
+    target.isContentEditable
+  );
+}
+
+function canAutoEnhance() {
+  return !elements.enhanceButton.disabled && !state.finalSummaryOpen;
+}
+
+function startAutoEnhance() {
+  if (autoEnhanceTimer !== null) return;
+  if (!canAutoEnhance()) return;
+  elements.enhanceButton.classList.add("auto-enhancing");
+  performEnhancement();
+  autoEnhanceTimer = window.setInterval(() => {
+    if (!canAutoEnhance()) {
+      stopAutoEnhance();
+      return;
+    }
+    performEnhancement();
+  }, AUTO_ENHANCE_INTERVAL_MS);
+}
+
+function stopAutoEnhance() {
+  if (autoEnhanceTimer !== null) {
+    window.clearInterval(autoEnhanceTimer);
+    autoEnhanceTimer = null;
+  }
+  elements.enhanceButton.classList.remove("auto-enhancing");
+}
+
+function bindAutoEnhanceHotkey() {
+  window.addEventListener("keydown", (event) => {
+    if (event.code !== "Space") return;
+    if (isTypingTarget(event.target)) return;
+    event.preventDefault();
+    if (spaceKeyHeld) return;
+    spaceKeyHeld = true;
+    startAutoEnhance();
+  });
+
+  window.addEventListener("keyup", (event) => {
+    if (event.code !== "Space") return;
+    spaceKeyHeld = false;
+    stopAutoEnhance();
+  });
+
+  window.addEventListener("blur", () => {
+    spaceKeyHeld = false;
+    stopAutoEnhance();
+  });
 }
 
 function createId() {
