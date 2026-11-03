@@ -577,9 +577,9 @@ function closeFinalSummary() {
 
 function updateArmorVisual(level) {
   if (level === null) {
-    elements.armorShape.style.opacity = "0.2";
+    elements.armorShape.style.opacity = "0.15";
     elements.armorShape.style.transform = "scale(0.72)";
-    elements.armorShape.removeAttribute("src");
+    elements.armorShape.src = getArmorAssetPath(0);
     elements.armorShape.alt = "파괴된 갑옷";
     elements.stageGlow.style.opacity = "0.05";
     return;
