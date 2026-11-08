@@ -18,3 +18,11 @@ Thumbs.db
 BACKEND_ARCHITECTURE.md
 INTEGRATION_CHECKLIST.md
 .firebase/
+
+# Firebase service account key (SENSITIVE - DO NOT COMMIT)
+service-account-key.json
+
+# Raw log dumps pulled from Firestore (large, contains user data)
+raw-events.json
+raw-sessions.json
+log-analysis-output.txt
