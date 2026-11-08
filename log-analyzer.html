@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>갑옷 강화 - 로그 분석 도구</title>
+  <link rel="stylesheet" href="log-analyzer-style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🎮 갑옷 강화 - 로그 분석 도구</h1>
+    <p class="subtitle">지난 2주간의 게임 플레이 데이터 분석</p>
+
+    <div class="button-group">
+      <button class="btn-primary" id="btn-analyze">📊 분석 시작</button>
+      <button class="btn-secondary" id="btn-download">📥 결과 다운로드</button>
+    </div>
+
+    <div class="status" id="status"></div>
+
+    <div class="content" id="content">
+      <h2>분석 결과</h2>
+      <pre id="output"></pre>
+    </div>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+  <script src="log-analyzer.js"></script>
+</body>
+</html>

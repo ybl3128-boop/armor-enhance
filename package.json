@@ -6,7 +6,7 @@
   "scripts": {
     "test:e2e": "playwright test --reporter=line",
     "dev": "vite",
-    "build": "vite build",
+    "build": "node scripts/bump-version.js && vite build",
     "preview": "vite preview"
   },
   "dependencies": {
