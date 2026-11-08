@@ -27,6 +27,7 @@ function initFirebaseLogging() {
     });
     fbDb = firebase.firestore();
     console.log("✅ Firebase 초기화 완료");
+    startEventFlushTimer();
   } catch (err) {
     console.error("❌ Firebase 초기화 실패:", err);
     fbDb = null;
@@ -39,17 +40,45 @@ function fbSafeCall(promise) {
   promise.catch((err) => console.warn("Firebase 저장 실패:", err));
 }
 
+// ============================================
+// 이벤트 배치 전송 (쓰기 횟수 절감)
+// 클릭/강화마다 즉시 쓰기하지 않고 버퍼에 모아 30초마다 또는
+// 세션 종료 시 한 번에 전송한다 (Firestore 일일 쓰기 할당량 보호)
+// ============================================
+const EVENT_FLUSH_INTERVAL_MS = 30000;
+let eventBuffer = [];
+let flushTimer = null;
+
 function fbLogEvent(eventType, payload) {
   if (!fbDb || TEST_MODE) return;
+  eventBuffer.push({
+    eventType,
+    payload,
+    clientTime: Date.now()
+  });
+}
+
+function flushEventBuffer() {
+  if (!fbDb || TEST_MODE) return;
+  if (eventBuffer.length === 0) return;
+
+  const batch = eventBuffer;
+  eventBuffer = [];
+
   fbSafeCall(
-    fbDb.collection("events").add({
+    fbDb.collection("event_batches").add({
       sessionId,
       playerId: state?.playerId ?? "unknown",
-      eventType,
-      payload,
-      timestamp: firebase.firestore.FieldValue.serverTimestamp()
+      events: batch,
+      eventCount: batch.length,
+      flushedAt: firebase.firestore.FieldValue.serverTimestamp()
     })
   );
+}
+
+function startEventFlushTimer() {
+  if (TEST_MODE || flushTimer !== null) return;
+  flushTimer = window.setInterval(flushEventBuffer, EVENT_FLUSH_INTERVAL_MS);
 }
 
 function fbStartSession() {
@@ -200,6 +229,7 @@ logEvent("session_start", {
 });
 
 bindEvents();
+startEventFlushTimer();
 render();
 
 function bindEvents() {
@@ -988,5 +1018,6 @@ window.addEventListener("beforeunload", () => {
   };
   fbEndSession(summary);
   logEvent("session_end", summary);
+  flushEventBuffer();
   saveState();
 });
