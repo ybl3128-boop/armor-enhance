@@ -230,6 +230,7 @@ logEvent("session_start", {
 
 bindEvents();
 startEventFlushTimer();
+openHelpModal(); // 접속 시 도움말 자동 표시 (신규/재접속 무관)
 render();
 
 function bindEvents() {
