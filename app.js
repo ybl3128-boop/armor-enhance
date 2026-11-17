@@ -33,7 +33,6 @@ function initFirebaseLogging() {
     fbDb = null;
   }
 }
-initFirebaseLogging();
 
 function fbSafeCall(promise) {
   if (!promise || typeof promise.catch !== "function") return;
@@ -48,6 +47,10 @@ function fbSafeCall(promise) {
 const EVENT_FLUSH_INTERVAL_MS = 30000;
 let eventBuffer = [];
 let flushTimer = null;
+
+// flushTimer 선언 이후에 초기화를 실행해야 startEventFlushTimer()에서
+// "Cannot access 'flushTimer' before initialization" TDZ 오류가 나지 않는다.
+initFirebaseLogging();
 
 function fbLogEvent(eventType, payload) {
   if (!fbDb || TEST_MODE) return;
